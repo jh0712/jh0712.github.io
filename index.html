@@ -101,8 +101,7 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <h1 id="RESTful-API-設計主要原則"><a href="#RESTful-API-設計主要原則" class="headerlink" title="RESTful API 設計主要原則"></a>RESTful API 設計主要原則</h1><p>我來為您整理 RESTful API 的核心設計原則和最佳實踐：</p>
-<h2 id="核心原則"><a href="#核心原則" class="headerlink" title="核心原則"></a>核心原則</h2><h3 id="1-使用-HTTP-方法（HTTP-Verbs）"><a href="#1-使用-HTTP-方法（HTTP-Verbs）" class="headerlink" title="1. 使用 HTTP 方法（HTTP Verbs）"></a>1. <strong>使用 HTTP 方法（HTTP Verbs）</strong></h3><ul>
+        <h2 id="核心原則"><a href="#核心原則" class="headerlink" title="核心原則"></a>核心原則</h2><h3 id="1-使用-HTTP-方法（HTTP-Verbs）"><a href="#1-使用-HTTP-方法（HTTP-Verbs）" class="headerlink" title="1. 使用 HTTP 方法（HTTP Verbs）"></a>1. <strong>使用 HTTP 方法（HTTP Verbs）</strong></h3><ul>
 <li><strong>GET</strong>: 獲取資源</li>
 <li><strong>POST</strong>: 創建新資源</li>
 <li><strong>PUT</strong>: 完整更新資源</li>
@@ -151,19 +150,10 @@
 
 <h2 id="完整範例：部落格-API"><a href="#完整範例：部落格-API" class="headerlink" title="完整範例：部落格 API"></a>完整範例：部落格 API</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># 文章（Articles）</span><br><span class="line">GET    /api/v1/articles                 # 獲取所有文章</span><br><span class="line">GET    /api/v1/articles?page=1&amp;limit=10 # 分頁獲取</span><br><span class="line">GET    /api/v1/articles/123             # 獲取特定文章</span><br><span class="line">POST   /api/v1/articles                 # 創建新文章</span><br><span class="line">PUT    /api/v1/articles/123             # 更新文章</span><br><span class="line">DELETE /api/v1/articles/123             # 刪除文章</span><br><span class="line"></span><br><span class="line"># 評論（Comments）</span><br><span class="line">GET    /api/v1/articles/123/comments    # 獲取文章的所有評論</span><br><span class="line">POST   /api/v1/articles/123/comments    # 為文章添加評論</span><br><span class="line">DELETE /api/v1/comments/456             # 刪除特定評論</span><br><span class="line"></span><br><span class="line"># 作者（Authors）</span><br><span class="line">GET    /api/v1/authors/789/articles     # 獲取作者的所有文章</span><br></pre></td></tr></table></figure>
 
-<h2 id="主要參考來源"><a href="#主要參考來源" class="headerlink" title="主要參考來源"></a>主要參考來源</h2><p>關於 RESTful API 設計的權威資源，我建議您參考以下來源（這些是業界廣泛認可的標準）：</p>
-<ol>
-<li><strong>Roy Fielding 的博士論文</strong> - REST 架構風格的原始定義</li>
-<li><strong>Microsoft REST API Guidelines</strong> - 微軟的 REST API 設計指南</li>
-<li><strong>Google API Design Guide</strong> - Google 的 API 設計最佳實踐</li>
-<li><strong>RESTful Web APIs (O’Reilly)</strong> - Leonard Richardson 和 Mike Amundsen 的著作</li>
-</ol>
-<p>這些原則能幫助您設計出清晰、可維護且易於使用的 API。您想深入了解其中哪個部分嗎？</p>
-
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://jh0712.github.io/2025/10/03/restful-api-design-principles/" data-id="cmgb36nyu0001sk7yhzw0cxm2" data-title="RESTful API 設計主要原則" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://jh0712.github.io/2025/10/03/restful-api-design-principles/" data-id="cmgb43bvl0002or7y19frbmwm" data-title="RESTful API 設計主要原則" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -204,58 +194,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://jh0712.github.io/2025/05/11/Hello-World-0/" data-id="cmajsxmvi0000q77y0205gclt" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-hello-world" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2025/05/11/hello-world/" class="article-date">
-  <time class="dt-published" datetime="2025-05-11T15:06:27.202Z" itemprop="datePublished">2025-05-11</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2025/05/11/hello-world/">Hello World</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://jh0712.github.io/2025/05/11/hello-world/" data-id="cmajsuz6o0000j97y8660hafk" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://jh0712.github.io/2025/05/11/Hello-World-0/" data-id="cmgb43bvi0000or7ygmcdftqv" data-title="Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -302,7 +241,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://jh0712.github.io/2024/01/01/linux-swap-memory-management/" data-id="cmgb36nys0000sk7y82w67poy" data-title="Linux 記憶體不足解法：建立與啟用 Swap 教學" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://jh0712.github.io/2024/01/01/linux-swap-memory-management/" data-id="cmgb43bvk0001or7ya5qn8zkr" data-title="Linux 記憶體不足解法：建立與啟用 Swap 教學" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -373,10 +312,6 @@
         
           <li>
             <a href="/2025/05/11/Hello-World-0/">Hello World</a>
-          </li>
-        
-          <li>
-            <a href="/2025/05/11/hello-world/">Hello World</a>
           </li>
         
           <li>
