@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>Linux 記憶體不足解法：建立與啟用 Swap 教學 | Kite Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="當系統 RAM 不足時，容易發生應用程式被強制終止（Out of Memory, OOM）。建立 Swap 可以作為虛擬記憶體，讓系統有喘息空間。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux 記憶體不足解法：建立與啟用 Swap 教學">
+<meta property="og:url" content="https://jh0712.github.io/2024/01/01/linux-swap-memory-management/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="當系統 RAM 不足時，容易發生應用程式被強制終止（Out of Memory, OOM）。建立 Swap 可以作為虛擬記憶體，讓系統有喘息空間。">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2024-01-01T02:00:00.000Z">
+<meta property="article:modified_time" content="2025-07-02T08:25:25.571Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="Swap">
+<meta property="article:tag" content="記憶體管理">
+<meta property="article:tag" content="系統優化">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Kite Blog" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Kite Blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">一個紀錄生活的地方</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜尋"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜尋"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://jh0712.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-linux-swap-memory-management" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/01/01/linux-swap-memory-management/" class="article-date">
+  <time class="dt-published" datetime="2024-01-01T02:00:00.000Z" itemprop="datePublished">2024-01-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Linux/">Linux</a>►<a class="article-category-link" href="/categories/Linux/%E7%B3%BB%E7%B5%B1%E7%AE%A1%E7%90%86/">系統管理</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      Linux 記憶體不足解法：建立與啟用 Swap 教學
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>當系統 RAM 不足時，容易發生應用程式被強制終止（Out of Memory, OOM）。建立 Swap 可以作為虛擬記憶體，讓系統有喘息空間。</p>
+<span id="more"></span>
+
+<h2 id="🧠-什麼是-Swap？"><a href="#🧠-什麼是-Swap？" class="headerlink" title="🧠 什麼是 Swap？"></a>🧠 什麼是 Swap？</h2><p>Swap 是硬碟上的一塊空間，當實體記憶體（RAM）不足時，系統會將部分資料暫時移動到 Swap 空間，避免系統崩潰或應用程式被 kill。</p>
+<h2 id="✅-建立-2GB-Swap-的完整步驟"><a href="#✅-建立-2GB-Swap-的完整步驟" class="headerlink" title="✅ 建立 2GB Swap 的完整步驟"></a>✅ 建立 2GB Swap 的完整步驟</h2><h3 id="1️⃣-建立-Swap-檔案"><a href="#1️⃣-建立-Swap-檔案" class="headerlink" title="1️⃣ 建立 Swap 檔案"></a>1️⃣ 建立 Swap 檔案</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> fallocate -l 2G /swapfile</span><br></pre></td></tr></table></figure>
+
+<p>若 fallocate 不支援，可改用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">dd</span> <span class="keyword">if</span>=/dev/zero of=/swapfile bs=1M count=2048</span><br></pre></td></tr></table></figure>
+
+<h3 id="2️⃣-設定權限"><a href="#2️⃣-設定權限" class="headerlink" title="2️⃣ 設定權限"></a>2️⃣ 設定權限</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> <span class="built_in">chmod</span> 600 /swapfile</span><br></pre></td></tr></table></figure>
+
+<h3 id="3️⃣-格式化成-Swap-區域"><a href="#3️⃣-格式化成-Swap-區域" class="headerlink" title="3️⃣ 格式化成 Swap 區域"></a>3️⃣ 格式化成 Swap 區域</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> mkswap /swapfile</span><br></pre></td></tr></table></figure>
+
+<h3 id="4️⃣-啟用-Swap"><a href="#4️⃣-啟用-Swap" class="headerlink" title="4️⃣ 啟用 Swap"></a>4️⃣ 啟用 Swap</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> swapon /swapfile</span><br></pre></td></tr></table></figure>
+
+<h3 id="5️⃣-確認-Swap-是否啟用"><a href="#5️⃣-確認-Swap-是否啟用" class="headerlink" title="5️⃣ 確認 Swap 是否啟用"></a>5️⃣ 確認 Swap 是否啟用</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">swapon --show</span><br><span class="line"><span class="comment"># 或</span></span><br><span class="line">free -h</span><br></pre></td></tr></table></figure>
+
+<h2 id="🚀-開機自動掛載-Swap"><a href="#🚀-開機自動掛載-Swap" class="headerlink" title="🚀 開機自動掛載 Swap"></a>🚀 開機自動掛載 Swap</h2><h3 id="1️⃣-編輯-etc-fstab"><a href="#1️⃣-編輯-etc-fstab" class="headerlink" title="1️⃣ 編輯 &#x2F;etc&#x2F;fstab"></a>1️⃣ 編輯 &#x2F;etc&#x2F;fstab</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> vim /etc/fstab</span><br></pre></td></tr></table></figure>
+
+<p>在檔案底部加入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/swapfile none swap sw 0 0</span><br></pre></td></tr></table></figure>
+
+<p>儲存並離開 vim：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:wq</span><br></pre></td></tr></table></figure>
+
+<h3 id="2️⃣-測試-fstab-是否正確"><a href="#2️⃣-測試-fstab-是否正確" class="headerlink" title="2️⃣ 測試 fstab 是否正確"></a>2️⃣ 測試 fstab 是否正確</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> mount -a</span><br></pre></td></tr></table></figure>
+
+<p>若沒錯誤訊息，表示設定正確。</p>
+<h2 id="🔧（可選）調整-swappiness（減少-Swap-使用頻率）"><a href="#🔧（可選）調整-swappiness（減少-Swap-使用頻率）" class="headerlink" title="🔧（可選）調整 swappiness（減少 Swap 使用頻率）"></a>🔧（可選）調整 swappiness（減少 Swap 使用頻率）</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> vim /etc/sysctl.conf</span><br></pre></td></tr></table></figure>
+
+<p>加入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vm.swappiness=10</span><br></pre></td></tr></table></figure>
+
+<p>套用設定：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> sysctl -p</span><br></pre></td></tr></table></figure>
+
+<h2 id="📦-建立前先確認剩餘空間"><a href="#📦-建立前先確認剩餘空間" class="headerlink" title="📦 建立前先確認剩餘空間"></a>📦 建立前先確認剩餘空間</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">df</span> -h</span><br></pre></td></tr></table></figure>
+
+<p>查看 <code>/</code> 掛載點的 Avail 欄位是否足夠（建議保留數 GB 以上）。</p>
+<h2 id="🧪-範例輸出（free-h）"><a href="#🧪-範例輸出（free-h）" class="headerlink" title="🧪 範例輸出（free -h）"></a>🧪 範例輸出（free -h）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">              total        used        free      shared  buff/cache   available</span><br><span class="line">Mem:           3.8G        1.8G        1.4G        828K        686M        1.9G</span><br><span class="line">Swap:          15G          0B        15G</span><br></pre></td></tr></table></figure>
+
+<h2 id="✅-建議配置參考"><a href="#✅-建議配置參考" class="headerlink" title="✅ 建議配置參考"></a>✅ 建議配置參考</h2><table>
+<thead>
+<tr>
+<th>RAM 大小</th>
+<th>建議 Swap 大小</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&lt; 2GB</td>
+<td>1.5～2 倍 RAM</td>
+</tr>
+<tr>
+<td>2GB～8GB</td>
+<td>1～2 GB</td>
+</tr>
+<tr>
+<td>&gt; 8GB</td>
+<td>可選設 1～2GB</td>
+</tr>
+</tbody></table>
+<h2 id="總結"><a href="#總結" class="headerlink" title="總結"></a>總結</h2><p>透過建立 Swap 檔案，可以有效解決系統記憶體不足的問題。記得定期監控系統資源使用狀況，並根據實際需求調整 Swap 大小和 swappiness 參數。 </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://jh0712.github.io/2024/01/01/linux-swap-memory-management/" data-id="cmgb36nys0000sk7y82w67poy" data-title="Linux 記憶體不足解法：建立與啟用 Swap 教學" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Swap/" rel="tag">Swap</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%B3%BB%E7%B5%B1%E5%84%AA%E5%8C%96/" rel="tag">系統優化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%A8%98%E6%86%B6%E9%AB%94%E7%AE%A1%E7%90%86/" rel="tag">記憶體管理</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2025/05/11/hello-world/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Hello World
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分類</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/%E7%B3%BB%E7%B5%B1%E7%AE%A1%E7%90%86/">系統管理</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/">技術文章</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/API-%E8%A8%AD%E8%A8%88/">API 設計</a></li></ul></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">標籤</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/API/" rel="tag">API</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/REST/" rel="tag">REST</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Swap/" rel="tag">Swap</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%BE%8C%E7%AB%AF%E9%96%8B%E7%99%BC/" rel="tag">後端開發</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%B3%BB%E7%B5%B1%E5%84%AA%E5%8C%96/" rel="tag">系統優化</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A8%98%E6%86%B6%E9%AB%94%E7%AE%A1%E7%90%86/" rel="tag">記憶體管理</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%BB%9F%E9%AB%94%E6%9E%B6%E6%A7%8B/" rel="tag">軟體架構</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">標籤雲</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/API/" style="font-size: 10px;">API</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/REST/" style="font-size: 10px;">REST</a> <a href="/tags/Swap/" style="font-size: 10px;">Swap</a> <a href="/tags/%E5%BE%8C%E7%AB%AF%E9%96%8B%E7%99%BC/" style="font-size: 10px;">後端開發</a> <a href="/tags/%E7%B3%BB%E7%B5%B1%E5%84%AA%E5%8C%96/" style="font-size: 10px;">系統優化</a> <a href="/tags/%E8%A8%98%E6%86%B6%E9%AB%94%E7%AE%A1%E7%90%86/" style="font-size: 10px;">記憶體管理</a> <a href="/tags/%E8%BB%9F%E9%AB%94%E6%9E%B6%E6%A7%8B/" style="font-size: 10px;">軟體架構</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">彙整</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">十月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">一月 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2025/10/03/restful-api-design-principles/">RESTful API 設計主要原則</a>
+          </li>
+        
+          <li>
+            <a href="/2025/05/11/Hello-World-0/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2025/05/11/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2024/01/01/linux-swap-memory-management/">Linux 記憶體不足解法：建立與啟用 Swap 教學</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2025 Kite<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
