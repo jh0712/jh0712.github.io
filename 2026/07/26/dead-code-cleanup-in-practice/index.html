@@ -1,0 +1,986 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="最近我在一個 Next.js 專案上完成了一次大規模的死程式碼清理：213 個檔案、約 -14,100 行，使用者可見行為零變更。這篇文章不談「刪了什麼」，而是聚焦在方法論——如何在不弄壞任何東西的前提下，有信心地刪掉一大片程式碼。 （實作時間：2026-07-14）  背景知識：此專案早期為了快速驗證市場，開發速度優先於程式碼品質，經過多輪快速迭代後累積了不少技術債。我是後續才加入工程團隊，先">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">
+<meta property="og:url" content="https://jh0712.github.io/2026/07/26/dead-code-cleanup-in-practice/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="最近我在一個 Next.js 專案上完成了一次大規模的死程式碼清理：213 個檔案、約 -14,100 行，使用者可見行為零變更。這篇文章不談「刪了什麼」，而是聚焦在方法論——如何在不弄壞任何東西的前提下，有信心地刪掉一大片程式碼。 （實作時間：2026-07-14）  背景知識：此專案早期為了快速驗證市場，開發速度優先於程式碼品質，經過多輪快速迭代後累積了不少技術債。我是後續才加入工程團隊，先">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-07-26T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-25T17:13:53.212Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="Dead Code">
+<meta property="article:tag" content="重構">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="Next.js">
+<meta property="article:tag" content="工程實踐">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Dead Code 清理實戰：如何安全刪除一萬四千行程式碼 - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-26 10:00" pubdate>
+          2026年7月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          56 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Dead Code 清理實戰：如何安全刪除一萬四千行程式碼</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>最近我在一個 Next.js 專案上完成了一次大規模的死程式碼清理：213 個檔案、約 -14,100 行，使用者可見行為零變更。這篇文章不談「刪了什麼」，而是聚焦在方法論——如何在不弄壞任何東西的前提下，有信心地刪掉一大片程式碼。</p>
+<p>（實作時間：2026-07-14）</p>
+</blockquote>
+<p>背景知識：此專案早期為了快速驗證市場，開發速度優先於程式碼品質，經過多輪快速迭代後累積了不少技術債。我是後續才加入工程團隊，先在此專案做了幾個項目的功能，對於專案有一定了解後，才開啟了這個清理。</p>
+<h2 id="為什麼要清理-dead-code"><a href="#為什麼要清理-dead-code" class="headerlink" title="為什麼要清理 dead code"></a>為什麼要清理 dead code</h2><p>dead code 的成本常被低估。它不只是「放著不動的行數」，而是持續產生利息的技術債：</p>
+<ul>
+<li><strong>搜尋噪音</strong>：grep 一個符號時會撞到已經沒人用的 legacy 元件，誤導判斷。我們就實際發生過工程師（以及 AI coding agent）誤以為某個舊元件仍在使用而跟著修改的案例。</li>
+<li><strong>誤用風險</strong>：專案裡留著整組「看起來可用」的舊版表單元件，新人或 AI agent 有機會 import 到舊版而非現行版本。刪掉之後，這類錯誤在編譯期就會被擋下。</li>
+<li><strong>升級成本</strong>：未來框架大版本升級時，需要遷移、修型別、跑 codemod 的程式碼面積，跟 dead code 的量成正比。</li>
+<li><strong>Warning 疲勞</strong>：ESLint warnings 太多時，真正的新問題會淹沒在噪音裡。</li>
+<li><strong>AI 效率</strong>：在大量使用 AI coding agent 的時代，dead code 會直接墊高 agent 的 context 與 token 消耗，也讓它更容易讀到誤導性的舊程式碼而降低產出品質。</li>
+</ul>
+<h2 id="清理的四個類別"><a href="#清理的四個類別" class="headerlink" title="清理的四個類別"></a>清理的四個類別</h2><p>這次清理最終整理成幾個獨立的 commit，每個 commit 對應一種風險等級不同的變更類型：</p>
+<ol>
+<li><strong>未使用的 imports &#x2F; 變數 &#x2F; 函式</strong>（154 檔，-839 行）：依 ESLint <code>no-unused-vars</code> 移除約 390 個項目——未使用的 imports、賦值後從未讀取的變數、模組內從未被引用的函式、未使用的 catch bindings（改用 optional catch binding）、以及已經失效的 <code>eslint-disable</code> directives。</li>
+<li><strong>註解掉的 dead code</strong>（17 檔，-376 行）：停用的 JSX 區塊、被取代的舊 markup、註解掉的 import 與 statement。這些歷史 git 都有，不需要用註解保存。</li>
+<li><strong>未被任何地方引用的檔案</strong>（68 檔，-12,000+ 行）：整組 legacy 頁面、無人 import 的 barrel 元件群、未使用的 fixtures、hooks、scripts 與樣式檔。這是風險最高的一類，後面會詳述驗證流程。</li>
+<li><strong>Review 後的行為級修正</strong>（9 檔）：常數化永遠不會更新的 <code>useState</code>、移除結果沒人讀取的 API 請求、移除無效的 state 更新。</li>
+</ol>
+<p>依類別拆 commit 的好處是：reviewer 可以用不同的嚴格程度看不同的 commit——第 1、2 類幾乎可以掃過去，第 3、4 類值得逐檔確認。</p>
+<h2 id="實作方式：AI-做清理與舉證，人做最終把關"><a href="#實作方式：AI-做清理與舉證，人做最終把關" class="headerlink" title="實作方式：AI 做清理與舉證，人做最終把關"></a>實作方式：AI 做清理與舉證，人做最終把關</h2><p>這次清理的分工是：<strong>先用 Claude Code（Fable model）做基礎驗證跟清理，結束後由它產生風險評估報告，再由人做 code review 及風險確認。</strong></p>
+<p>給 AI agent 的指示核心大概是這樣（文章最後有詳細的 prompt）：</p>
+<blockquote>
+<p>用最保守的方式做代碼清理：移除目前沒用到的 code、檔案及相關註解；避開系統核心功能；feature flag 的部分一律保留。</p>
+</blockquote>
+<p>幾個實際運作下來的心得：</p>
+<ul>
+<li><strong>「最保守」要明說</strong>。AI 對「這算不算 dead code」的判斷預設會偏積極，明確要求保守之後，它會把不確定的項目列成 open question 留給人判斷，而不是直接刪。</li>
+<li><strong>禁區用白紙黑字圈出來</strong>。feature flag、tracking、部署 config 這些「刪了不會壞 build 但會出大事」的區域，靜態驗證抓不到，必須在 prompt 裡明確列為不可觸碰。</li>
+<li><strong>要求 AI 產出風險報告，而不是只產出 diff</strong>。人 review 一個 -14,100 行的 PR 是不現實的，但 review 一份「我刪了什麼類別、怎麼驗證的、哪裡有殘餘風險」的報告，再抽查對應的 commit，是現實的。AI 負責舉證，人負責判決——這比人直接肉眼掃 213 個檔案可靠得多。</li>
+</ul>
+<h2 id="核心方法：工具找候選，利用-AI-來放大工作效率，人來確認過程及結果"><a href="#核心方法：工具找候選，利用-AI-來放大工作效率，人來確認過程及結果" class="headerlink" title="核心方法：工具找候選，利用 AI 來放大工作效率，人來確認過程及結果"></a>核心方法：工具找候選，利用 AI 來放大工作效率，人來確認過程及結果</h2><p>整個流程最重要的原則是：<strong>靜態分析工具只負責提出候選名單，每一筆刪除都要有獨立的驗證證據。</strong></p>
+<h3 id="Step-1：用-knip-掃出候選"><a href="#Step-1：用-knip-掃出候選" class="headerlink" title="Step 1：用 knip 掃出候選"></a>Step 1：用 knip 掃出候選</h3><p><a target="_blank" rel="noopener" href="https://knip.dev/">knip</a> 是 JS&#x2F;TS 生態系裡找 unused files &#x2F; exports &#x2F; dependencies 的工具。它在這個專案掃出了 <strong>350 個未引用檔案候選</strong>。</p>
+<p>如果直接信任這個名單全刪，一定會出事。靜態分析看不到的引用包括：</p>
+<ul>
+<li>動態 import（尤其是 string 拼接的路徑）</li>
+<li>字串形式的引用（config、route 定義）</li>
+<li><code>package.json</code> scripts 直接執行的檔案</li>
+<li>測試框架 config（jest、playwright）載入的 setup 檔</li>
+<li>CI pipeline 裡直接呼叫的 scripts</li>
+<li>文件裡教人執行的指令</li>
+</ul>
+<h3 id="Step-2：逐一-grep-驗證"><a href="#Step-2：逐一-grep-驗證" class="headerlink" title="Step 2：逐一 grep 驗證"></a>Step 2：逐一 grep 驗證</h3><p>350 個候選的處理是一個漏斗：</p>
+<ol>
+<li>knip 掃出 <strong>350 個</strong>未引用檔案候選。</li>
+<li>其中<strong>近 200 個</strong>位在「架構遷移進行中」的目錄下，整批跳過不處理（原因見後文的風險對照表）。</li>
+<li>其餘約 <strong>150 個</strong>逐一用檔名與匯出符號 cross-grep 上述所有位置。</li>
+<li>最後只有 <strong>68 個</strong>確認真的沒有任何 live reference 才刪除。保留下來的候選中，有 8 個是因為找到了字串引用或 script 引用——這就是不能盲信工具的證明；其餘則因驗證中仍找到引用、或脈絡不明，依保守原則保留。</li>
+</ol>
+<h3 id="Step-3：刪變數時保護-side-effect"><a href="#Step-3：刪變數時保護-side-effect" class="headerlink" title="Step 3：刪變數時保護 side effect"></a>Step 3：刪變數時保護 side effect</h3><p>刪「賦值後從未讀取的變數」有一個陷阱：右值可能有 side effect。</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// 錯誤的刪法：連 API 呼叫一起刪掉，行為改變了</span><br><span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> <span class="hljs-title function_">trackSomething</span>();<br><br><span class="hljs-comment">// 正確的刪法：只刪賦值，保留呼叫</span><br><span class="hljs-keyword">await</span> <span class="hljs-title function_">trackSomething</span>();<br></code></pre></td></tr></table></figure>
+
+<p>原則是<strong>只刪「讀取」已死的部分，不動任何可能執行的表達式</strong>，除非能證明那個呼叫本身也是無效的（例如結果存進沒人讀的 state、而請求本身沒有伺服器端作用）。</p>
+<h2 id="風險對照表"><a href="#風險對照表" class="headerlink" title="風險對照表"></a>風險對照表</h2><p>大規模刪除的 PR，我建議在描述裡直接放一張「風險 &#x2F; 防護 &#x2F; 殘餘風險」的表，讓 reviewer 不用自己腦補你想過哪些事：</p>
+<table>
+<thead>
+<tr>
+<th>風險</th>
+<th>防護措施</th>
+<th>殘餘風險</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>誤刪仍被引用的檔案</td>
+<td>工具掃候選 → 逐一 grep 動態引用、configs、CI、docs 才刪</td>
+<td>低。string-concat 動態 import 理論上可能漏抓，由 production build + 全站實測涵蓋</td>
+</tr>
+<tr>
+<td>移除變數改變行為</td>
+<td>有 side effect 的右值保留呼叫、只刪賦值；另做專門的行為稽核，重點查金流相關路徑</td>
+<td>低</td>
+</tr>
+<tr>
+<td>刪除中弱化測試</td>
+<td>逐檔比對被修改的測試檔，確認 assertions 零刪除</td>
+<td>極低</td>
+</tr>
+<tr>
+<td>誤刪 feature flags &#x2F; tracking</td>
+<td>Feature flags 全數保留；tracking events 與團隊確認後保留，並在 staging 攔截 XHR 實測發送正常</td>
+<td>極低</td>
+</tr>
+<tr>
+<td>高風險區域</td>
+<td>刻意不動：靜態資產目錄、進行中架構遷移的 stub 檔案、部署 configs</td>
+<td>無（未觸碰）</td>
+</tr>
+</tbody></table>
+<p>最後一列值得展開講：也就是 Step 2 漏斗裡整批跳過的那近 200 個候選——它們全部位在「架構遷移進行中」的目錄下。這些檔案現在沒人引用，是因為遷移還沒完成，不代表它們是死的。<strong>「工具說沒人用」和「可以刪」之間隔著一層對專案脈絡的理解</strong>——這類檔案我們整批跳過，另開 issue 等團隊確認遷移意向。</p>
+<h2 id="驗證：讓刪除變成可證明的事"><a href="#驗證：讓刪除變成可證明的事" class="headerlink" title="驗證：讓刪除變成可證明的事"></a>驗證：讓刪除變成可證明的事</h2><p>清理型 PR 的說服力來自驗證的完整度：</p>
+<ol>
+<li><strong>既有系統測試全過</strong>：typecheck、lint（0 errors）、全套測試（3,600+ 通過、0 失敗）、production build。</li>
+<li><strong>獨立驗證</strong>：安排了三個互相獨立的 adversarial 驗證（利用 AI agent 分別從「檔案引用」「行為變更」「測試弱化」三個角度重查一次），全數通過。找三個不同的人分段 review 也能達到類似效果，重點是驗證者不能是「順著刪除者思路看一遍」，而是帶著「我要找出他刪錯的地方」的立場。</li>
+<li><strong>真實環境實測</strong>：在 staging 用測試帳號把主要使用者路徑全部走過一遍——登入、搜尋、核心功能流程——並且攔截 XHR 確認保留下來的 tracking events 仍然正常發送。</li>
+</ol>
+<p>另外一個細節：整理 commit 歷史時採用 rebuild 的方式，最後用 <code>git diff</code> 驗證整理前後的 tree 是 byte-identical，再以 <code>--force-with-lease</code> push。歷史變乾淨了，但內容可證明一行都沒變。</p>
+<h2 id="三個意料之外的教訓"><a href="#三個意料之外的教訓" class="headerlink" title="三個意料之外的教訓"></a>三個意料之外的教訓</h2><h3 id="1-「Temporary」的程式碼可能已經變成永久的"><a href="#1-「Temporary」的程式碼可能已經變成永久的" class="headerlink" title="1. 「Temporary」的程式碼可能已經變成永久的"></a>1. 「Temporary」的程式碼可能已經變成永久的</h3><p>原計畫要移除兩個註解標記為 temporary 的 diagnostic tracking events。跟團隊確認後才發現：這組數據已經變成某個功能正確性監測的既定基礎，決議是<strong>保留並升級為永久 telemetry</strong>——要做的不是刪程式碼，而是把程式碼和文件裡所有「temporary &#x2F; remove after follow-up」的註記清掉，讓標記與現實一致。</p>
+<p>教訓：<strong>註解說它是暫時的，不代表它還是暫時的。刪 tracking 相關的任何東西之前，先問資料的使用者。</strong></p>
+<p>這部分也是開發以來長久的病痛，在快速迭代的專案中，很常有這種過時註解或是程式碼，這時就仰賴專案維護人員間的互相溝通及確認。</p>
+<p>為了避免下次還有類似情況，建議做以下防範措施：</p>
+<ul>
+<li>定義好 temporary 的有效期限</li>
+<li>建立提醒項目提醒相關人員，避免忘記</li>
+<li>建立 routine 定期掃描程式碼，確認是否有遺留過久未更新的資訊</li>
+</ul>
+<p>有了這些，就能大幅降低因人為疏失導致程式碼資訊過舊的風險。</p>
+<h3 id="2-不要高估-bundle-size-的收益"><a href="#2-不要高估-bundle-size-的收益" class="headerlink" title="2. 不要高估 bundle size 的收益"></a>2. 不要高估 bundle size 的收益</h3><p>刪了 14,100 行，bundle 卻幾乎沒變小——因為大多數死檔案本來就沒被 import，根本不會進 bundle。清理的真正價值在維護面（搜尋噪音、誤用風險、升級成本），不在執行面。在 PR 描述裡如實陳述這點，比膨風「效能大幅提升」更能建立信任。</p>
+<h3 id="3-大面積的-PR-要儘早-merge"><a href="#3-大面積的-PR-要儘早-merge" class="headerlink" title="3. 大面積的 PR 要儘早 merge"></a>3. 大面積的 PR 要儘早 merge</h3><p>213 個檔案的變更面積，意味著跟其他 branch 的 conflict 機率隨時間快速上升。清理型 PR 的內容本身不急，但它的「保鮮期」很短——驗證做完就該推進 merge，拖越久重驗的成本越高。</p>
+<h2 id="後續：用-AI-routine-每週定期清理"><a href="#後續：用-AI-routine-每週定期清理" class="headerlink" title="後續：用 AI routine 每週定期清理"></a>後續：用 AI routine 每週定期清理</h2><p>一次性大掃除最大的問題就是「大」：積了幾年才清，驗證成本跟 review 負擔都是一次性爆發。所以清完之後，我把整套方法論固化成一個<strong>每週定期執行的 AI routine</strong>——小步清理、每週一個小 PR，讓 dead code 不再有機會積量。</p>
+<blockquote>
+<p>後續已經持續運作了幾週，第一週還有小部分的資料沒被清理到，第二週掃描結果為 0，再做了一次大掃除後，之後維護只需每週確認 AI 分析後的小部分程式碼變動。</p>
+</blockquote>
+<p>Routine 的 prompt 直接引用這次清理的報告書作為方法論來源（放在 repo 的 docs 裡，agent 可以自己讀），以下是去掉專案資訊後的大致內容：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><code class="hljs markdown">你是 <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">frontend-repo</span>&gt;</span></span> 的每週死程式碼清理 agent。你的任務：掃描 repo 中的死程式碼並移除，<br>最終開一個 PR 供人工 review。你絕對不可以自行 merge。<br>方法論源自 docs/<span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">dead-code-cleanup-report</span>&gt;</span></span>.md（repo 內可讀，建議先讀一遍）。<br><br><span class="hljs-section">## 工作流程</span><br><br><span class="hljs-bullet">1.</span> 從最新 main 建立 branch：<span class="hljs-code">`chore/weekly-dead-code-cleanup-&lt;YYYY-MM-DD&gt;`</span>。<br><span class="hljs-bullet">2.</span> 依序掃描四類死碼：<br>   a. 未使用的 imports / 變數 / 函式 — 跑 lint 檢視 <span class="hljs-code">`no-unused-vars`</span> warnings。<br><span class="hljs-code">      注意：若右值有 side effect（函式呼叫、hook），保留呼叫、只刪賦值。</span><br><span class="hljs-code">   b. 註解掉的死程式碼 — 停用的 JSX、被取代的舊 markup、註解掉的 import/statement。</span><br><span class="hljs-code">      保留有說明價值的文件性註解（解釋 why 的註解不是死碼）。</span><br><span class="hljs-code">   c. 未被引用的檔案 — 跑 `npx knip` 取得候選清單。每個候選檔必須逐一驗證後才可刪：</span><br><span class="hljs-code">      grep 全 repo 確認無 import 引用、無 string/dynamic 引用（含字串拼接的路徑）、</span><br><span class="hljs-code">      未出現在 package.json scripts、測試框架 configs、CI workflows、docs 的執行指示中。</span><br><span class="hljs-code">      任何有 live reference 的一律保留。單次最多刪 20 個檔案，其餘留待下週。</span><br><span class="hljs-code">   d. 無效邏輯（最保守）— 永不更新的 useState 改為常數、結果無人讀取的 API 請求移除。</span><br><span class="hljs-code">      不確定就不動。</span><br><span class="hljs-code"></span><br><span class="hljs-bullet">3.</span> 禁區（絕對不碰）：<br><span class="hljs-bullet">   -</span> 靜態資產目錄<br><span class="hljs-bullet">   -</span> 架構遷移中的目錄（團隊決策待定）<br><span class="hljs-bullet">   -</span> 部署相關 configs<br><span class="hljs-bullet">   -</span> 所有 feature flags<br><span class="hljs-bullet">   -</span> 所有 tracking / telemetry 程式碼<br><span class="hljs-bullet">   -</span> 測試檔中的 assertions：不可刪除或弱化任何 assertion；<br><span class="hljs-code">     只有整個測試檔對應的 source 被刪時才可刪該測試檔</span><br><span class="hljs-code"></span><br><span class="hljs-bullet">4.</span> 驗證關卡（全部必須通過）：typecheck、lint（0 errors，warnings 數不可比 main 增加）、<br>   test（0 failed）、build。任一項失敗：修正，修不了就 revert 造成失敗的那筆變更後重新驗證。<br><br><span class="hljs-bullet">5.</span> Commit 規範：Conventional Commits，依類別分開 commit，message 需說明變更原因。<br><br><span class="hljs-bullet">6.</span> 開 PR 到 main：body 必含各類別清理摘要（檔數/行數）、四項驗證結果表、<br>   knip 候選總數 vs 實刪數與保留原因摘要、風險評估，<br>   並明確標注「需人工 staging 驗證後再 merge」。<br><br><span class="hljs-bullet">7.</span> 無事可做的情況：若掃描後沒有值得清理的死碼，不開 PR、不建 branch，<br>   直接結束並輸出「本週無死碼可清理」與掃描摘要。<br><br><span class="hljs-bullet">8.</span> 回報通知：無論結果如何（已開 PR / 無事可做 / 執行失敗），結束前都必須<br>   發送通知到團隊頻道（webhook URL 由 secrets 提供，不寫死在 prompt）。<br>   依結果分三種格式：已開 PR（附摘要與 PR 連結）、本週無死碼（附掃描摘要）、<br>   執行失敗（說明卡在哪一步、失敗原因、已嘗試的修正；且不可留下 half-done 的<br>   remote branch 或 PR）。<br><br><span class="hljs-section">## 原則</span><br><br><span class="hljs-bullet">-</span> 保守優先：對「這是不是死碼」有任何不確定，就保留並在 PR body 中列為 open question。<br><span class="hljs-bullet">-</span> 使用者可見行為必須零變更；tracking / 分析資料流必須零變更。<br><span class="hljs-bullet">-</span> 規模控制：若候選過多，優先序為 imports/變數 &gt; 註解死碼 &gt; 檔案刪除 &gt; 無效邏輯，<br>  超出的留給下週。<br></code></pre></td></tr></table></figure>
+
+<p>這個 prompt 有幾個設計重點，也是我認為讓「無人值守的定期清理」能安全運作的關鍵：</p>
+<ul>
+<li><strong>AI 永遠不能自行 merge</strong>。它的產出永遠是一個等人 review 的 PR，merge 的決定權在人。</li>
+<li><strong>規模上限</strong>（單次最多刪 20 個檔案）：寧可分好幾週清完，也不要再產出一個 review 不動的巨型 PR——這正是一次性大掃除的教訓。</li>
+<li><strong>「無事可做」是合法結果</strong>。沒東西清就不開 PR，避免 AI 為了「交差」硬找東西刪。</li>
+<li><strong>失敗要收乾淨</strong>：執行失敗時不可留下 half-done 的 branch 或 PR，下週重來就是乾淨的起點。</li>
+<li><strong>無論成敗都要回報</strong>。routine 最怕的是 silent failure——它悄悄失敗了三週而沒人發現，dead code 又開始積量。強制回報讓「沒消息」本身成為異常訊號。</li>
+</ul>
+<h2 id="成果總結"><a href="#成果總結" class="headerlink" title="成果總結"></a>成果總結</h2><ul>
+<li>程式碼量減少約 14,100 行，刪除 68 個未引用檔案</li>
+<li>ESLint warnings 減少 22%，lint 輸出的訊噪比明顯改善</li>
+<li>使用者可見行為零變更、tracking 資料流零中斷</li>
+<li>順手修掉幾個真正的無效行為：每次 mount 都白打一次的 API 請求、造成整頁多餘 re-render 的無效 state 更新</li>
+</ul>
+<p>如果你的專案也累積了多年的死程式碼，我的建議是：<strong>別手動找，讓工具（knip + ESLint）給你候選名單；別信任工具，讓 grep 和測試給你刪除的證據；別碰你不理解脈絡的區域，那些留給知道答案的人。</strong> 然後——把整套流程固化成每週的 routine，讓這是你最後一次需要「大掃除」。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Dead-Code/" class="print-no-link">#Dead Code</a>
+      
+        <a href="/tags/%E9%87%8D%E6%A7%8B/" class="print-no-link">#重構</a>
+      
+        <a href="/tags/AI-Agent/" class="print-no-link">#AI Agent</a>
+      
+        <a href="/tags/Next-js/" class="print-no-link">#Next.js</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Dead Code 清理實戰：如何安全刪除一萬四千行程式碼</div>
+      <div>https://jh0712.github.io/2026/07/26/dead-code-cleanup-in-practice/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年7月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/10/03/restful-api-design-principles/" title="RESTful API 設計主要原則">
+                        <span class="hidden-mobile">RESTful API 設計主要原則</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>
