@@ -37,19 +37,6 @@
   
   
   <entry>
-    <title>Hello World</title>
-    <link href="/2025/05/11/Hello-World-0/"/>
-    <url>/2025/05/11/Hello-World-0/</url>
-    
-    <content type="html"><![CDATA[<p>this is kite first doc.</p>]]></content>
-    
-    
-    
-  </entry>
-  
-  
-  
-  <entry>
     <title>Linux 記憶體不足解法：建立與啟用 Swap 教學</title>
     <link href="/2024/01/01/linux-swap-memory-management/"/>
     <url>/2024/01/01/linux-swap-memory-management/</url>
