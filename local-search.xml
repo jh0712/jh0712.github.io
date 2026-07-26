@@ -57,11 +57,11 @@
     
     <tags>
       
+      <tag>後端開發</tag>
+      
       <tag>API</tag>
       
       <tag>REST</tag>
-      
-      <tag>後端開發</tag>
       
       <tag>軟體架構</tag>
       
@@ -95,6 +95,39 @@
       <tag>PHP</tag>
       
       <tag>Enum</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Laravel Scout 更新 Elasticsearch Mappings 的兩種方式</title>
+    <link href="/2025/03/19/laravel-scout-elasticsearch-mapping/"/>
+    <url>/2025/03/19/laravel-scout-elasticsearch-mapping/</url>
+    
+    <content type="html"><![CDATA[<p>Laravel Scout 提供了兩種方式來處理 Elasticsearch 的 mappings 更新。</p><h2 id="1-自動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-true）"><a href="#1-自動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-true）" class="headerlink" title="1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）"></a>1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）</h2><p>在 .env 設定檔中將 <code>SCOUT_ELASTIC_UPDATE_MAPPING</code> 設定為 true 時，Laravel Scout 會自動在模型資料變更時更新 Elasticsearch 的 mappings。這意味著每當資料變動時，Scout 會自動處理 mappings 的更新，無需手動操作。</p><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">SCOUT_ELASTIC_UPDATE_MAPPING</span>=<span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure><p>這種方式適用於那些希望在每次資料變動時自動同步 mappings 的情況，能夠降低手動操作的負擔。</p><h2 id="2-手動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-false）"><a href="#2-手動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-false）" class="headerlink" title="2. 手動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; false）"></a>2. 手動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; false）</h2><p>將 <code>SCOUT_ELASTIC_UPDATE_MAPPING</code> 設定為 false，則 Scout 不會自動更新 mappings。相對應的，你需要手動執行命令來更新 mappings，這樣可以讓你對何時更新 mappings 有更多的控制權。</p><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">SCOUT_ELASTIC_UPDATE_MAPPING</span>=<span class="hljs-literal">false</span><br></code></pre></td></tr></table></figure><p>在這種情況下，當模型結構或索引設定改變時，必須使用以下 Artisan 命令來手動更新 mappings：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">php artisan elastic:update-mapping App\\MyModel<br></code></pre></td></tr></table></figure><p>這樣的方式適合對更新過程進行更細緻控制，或是在需要進行批量更新或有特殊需求時使用。</p><h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><ul><li><strong>自動更新（設定 SCOUT_ELASTIC_UPDATE_MAPPING&#x3D;true）</strong>：讓 Laravel Scout 在資料變更時自動更新 mappings，適用於自動化處理場景。</li><li><strong>手動更新（設定 SCOUT_ELASTIC_UPDATE_MAPPING&#x3D;false）</strong>：需要手動執行 Artisan 命令來更新 mappings，適用於需要手動控制更新流程的情況。</li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>技術文章</category>
+      
+      <category>Laravel</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Laravel</tag>
+      
+      <tag>Elasticsearch</tag>
+      
+      <tag>Scout</tag>
+      
+      <tag>後端開發</tag>
       
     </tags>
     

@@ -19,25 +19,25 @@
   <meta name="author" content="Kite">
   <meta name="keywords" content="">
   
-    <meta name="description" content="核心原則1. 使用 HTTP 方法（HTTP Verbs） GET: 獲取資源 POST: 創建新資源 PUT: 完整更新資源 PATCH: 部分更新資源 DELETE: 刪除資源  範例： 123456GET    &#x2F;api&#x2F;users          # 獲取所有用戶GET    &#x2F;api&#x2F;users&#x2F;123      # 獲取特定用戶POST   &#x2F;api&#x2F;users          #">
+    <meta name="description" content="Laravel Scout 提供了兩種方式來處理 Elasticsearch 的 mappings 更新。 1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）在 .env 設定檔中將 SCOUT_ELASTIC_UPDATE_MAPPING 設定為 true 時，Laravel Scout 會自動在模型資料變更時更新 Elas">
 <meta property="og:type" content="article">
-<meta property="og:title" content="RESTful API 設計主要原則">
-<meta property="og:url" content="https://jh0712.github.io/2025/10/03/restful-api-design-principles/index.html">
+<meta property="og:title" content="Laravel Scout 更新 Elasticsearch Mappings 的兩種方式">
+<meta property="og:url" content="https://jh0712.github.io/2025/03/19/laravel-scout-elasticsearch-mapping/index.html">
 <meta property="og:site_name" content="Kite Blog">
-<meta property="og:description" content="核心原則1. 使用 HTTP 方法（HTTP Verbs） GET: 獲取資源 POST: 創建新資源 PUT: 完整更新資源 PATCH: 部分更新資源 DELETE: 刪除資源  範例： 123456GET    &#x2F;api&#x2F;users          # 獲取所有用戶GET    &#x2F;api&#x2F;users&#x2F;123      # 獲取特定用戶POST   &#x2F;api&#x2F;users          #">
+<meta property="og:description" content="Laravel Scout 提供了兩種方式來處理 Elasticsearch 的 mappings 更新。 1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）在 .env 設定檔中將 SCOUT_ELASTIC_UPDATE_MAPPING 設定為 true 時，Laravel Scout 會自動在模型資料變更時更新 Elas">
 <meta property="og:locale" content="zh_TW">
-<meta property="article:published_time" content="2025-10-03T02:00:00.000Z">
-<meta property="article:modified_time" content="2025-10-03T17:21:22.138Z">
+<meta property="article:published_time" content="2025-03-19T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-26T04:08:01.687Z">
 <meta property="article:author" content="Kite">
+<meta property="article:tag" content="Laravel">
+<meta property="article:tag" content="Elasticsearch">
+<meta property="article:tag" content="Scout">
 <meta property="article:tag" content="後端開發">
-<meta property="article:tag" content="API">
-<meta property="article:tag" content="REST">
-<meta property="article:tag" content="軟體架構">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>RESTful API 設計主要原則 - Kite Blog</title>
+  <title>Laravel Scout 更新 Elasticsearch Mappings 的兩種方式 - Kite Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -332,7 +332,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="RESTful API 設計主要原則"></span>
+            <span id="subtitle" data-typed-text="Laravel Scout 更新 Elasticsearch Mappings 的兩種方式"></span>
           
         </div>
 
@@ -343,8 +343,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-10-03 10:00" pubdate>
-          2025年10月3日 上午
+        <time datetime="2025-03-19 10:00" pubdate>
+          2025年3月19日 上午
         </time>
       </span>
     
@@ -355,7 +355,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.7k 字
+          844 字
         
       </span>
     
@@ -366,7 +366,7 @@
         
         
         
-          14 分鐘
+          8 分鐘
         
       </span>
     
@@ -405,59 +405,27 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">RESTful API 設計主要原則</h1>
+            <h1 id="seo-header">Laravel Scout 更新 Elasticsearch Mappings 的兩種方式</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="核心原則"><a href="#核心原則" class="headerlink" title="核心原則"></a>核心原則</h2><h3 id="1-使用-HTTP-方法（HTTP-Verbs）"><a href="#1-使用-HTTP-方法（HTTP-Verbs）" class="headerlink" title="1. 使用 HTTP 方法（HTTP Verbs）"></a>1. <strong>使用 HTTP 方法（HTTP Verbs）</strong></h3><ul>
-<li><strong>GET</strong>: 獲取資源</li>
-<li><strong>POST</strong>: 創建新資源</li>
-<li><strong>PUT</strong>: 完整更新資源</li>
-<li><strong>PATCH</strong>: 部分更新資源</li>
-<li><strong>DELETE</strong>: 刪除資源</li>
+                <p>Laravel Scout 提供了兩種方式來處理 Elasticsearch 的 mappings 更新。</p>
+<h2 id="1-自動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-true）"><a href="#1-自動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-true）" class="headerlink" title="1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）"></a>1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）</h2><p>在 .env 設定檔中將 <code>SCOUT_ELASTIC_UPDATE_MAPPING</code> 設定為 true 時，Laravel Scout 會自動在模型資料變更時更新 Elasticsearch 的 mappings。這意味著每當資料變動時，Scout 會自動處理 mappings 的更新，無需手動操作。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">SCOUT_ELASTIC_UPDATE_MAPPING</span>=<span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<p>這種方式適用於那些希望在每次資料變動時自動同步 mappings 的情況，能夠降低手動操作的負擔。</p>
+<h2 id="2-手動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-false）"><a href="#2-手動更新-Mappings（設定-SCOUT-ELASTIC-UPDATE-MAPPING-false）" class="headerlink" title="2. 手動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; false）"></a>2. 手動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; false）</h2><p>將 <code>SCOUT_ELASTIC_UPDATE_MAPPING</code> 設定為 false，則 Scout 不會自動更新 mappings。相對應的，你需要手動執行命令來更新 mappings，這樣可以讓你對何時更新 mappings 有更多的控制權。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">SCOUT_ELASTIC_UPDATE_MAPPING</span>=<span class="hljs-literal">false</span><br></code></pre></td></tr></table></figure>
+
+<p>在這種情況下，當模型結構或索引設定改變時，必須使用以下 Artisan 命令來手動更新 mappings：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">php artisan elastic:update-mapping App\\MyModel<br></code></pre></td></tr></table></figure>
+
+<p>這樣的方式適合對更新過程進行更細緻控制，或是在需要進行批量更新或有特殊需求時使用。</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><ul>
+<li><strong>自動更新（設定 SCOUT_ELASTIC_UPDATE_MAPPING&#x3D;true）</strong>：讓 Laravel Scout 在資料變更時自動更新 mappings，適用於自動化處理場景。</li>
+<li><strong>手動更新（設定 SCOUT_ELASTIC_UPDATE_MAPPING&#x3D;false）</strong>：需要手動執行 Artisan 命令來更新 mappings，適用於需要手動控制更新流程的情況。</li>
 </ul>
-<p><strong>範例：</strong></p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs awk">GET    <span class="hljs-regexp">/api/u</span>sers          <span class="hljs-comment"># 獲取所有用戶</span><br>GET    <span class="hljs-regexp">/api/u</span>sers/<span class="hljs-number">123</span>      <span class="hljs-comment"># 獲取特定用戶</span><br>POST   <span class="hljs-regexp">/api/u</span>sers          <span class="hljs-comment"># 創建新用戶</span><br>PUT    <span class="hljs-regexp">/api/u</span>sers/<span class="hljs-number">123</span>      <span class="hljs-comment"># 完整更新用戶</span><br>PATCH  <span class="hljs-regexp">/api/u</span>sers/<span class="hljs-number">123</span>      <span class="hljs-comment"># 部分更新用戶</span><br>DELETE <span class="hljs-regexp">/api/u</span>sers/<span class="hljs-number">123</span>      <span class="hljs-comment"># 刪除用戶</span><br></code></pre></td></tr></table></figure>
-
-<h3 id="2-使用名詞而非動詞"><a href="#2-使用名詞而非動詞" class="headerlink" title="2. 使用名詞而非動詞"></a>2. <strong>使用名詞而非動詞</strong></h3><p>URL 應該代表資源（名詞），而不是操作（動詞）</p>
-<p><strong>✅ 好的設計：</strong></p>
-<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs gradle">GET <span class="hljs-regexp">/api/</span>articles/<span class="hljs-number">123</span><br><span class="hljs-keyword">DELETE</span> <span class="hljs-regexp">/api/</span>articles/<span class="hljs-number">123</span><br></code></pre></td></tr></table></figure>
-
-<p><strong>❌ 不好的設計：</strong></p>
-<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">GET</span> /api/getArticle/<span class="hljs-number">123</span><br><span class="hljs-attribute">POST</span> /api/deleteArticle/<span class="hljs-number">123</span><br></code></pre></td></tr></table></figure>
-
-<h3 id="3-使用複數名詞"><a href="#3-使用複數名詞" class="headerlink" title="3. 使用複數名詞"></a>3. <strong>使用複數名詞</strong></h3><p>保持一致性，端點使用複數形式</p>
-<p><strong>範例：</strong></p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs awk"><span class="hljs-regexp">/api/u</span>sers          <span class="hljs-comment"># 而非 /api/user</span><br><span class="hljs-regexp">/api/</span>products       <span class="hljs-comment"># 而非 /api/product</span><br><span class="hljs-regexp">/api/</span>orders         <span class="hljs-comment"># 而非 /api/order</span><br></code></pre></td></tr></table></figure>
-
-<h3 id="4-資源層級關係（Nested-Resources）"><a href="#4-資源層級關係（Nested-Resources）" class="headerlink" title="4. 資源層級關係（Nested Resources）"></a>4. <strong>資源層級關係（Nested Resources）</strong></h3><p>表達資源之間的關聯</p>
-<p><strong>範例：</strong></p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs awk">GET <span class="hljs-regexp">/api/u</span>sers<span class="hljs-regexp">/123/</span>orders           <span class="hljs-comment"># 獲取用戶的所有訂單</span><br>GET <span class="hljs-regexp">/api/u</span>sers<span class="hljs-regexp">/123/</span>orders/<span class="hljs-number">456</span>       <span class="hljs-comment"># 獲取用戶的特定訂單</span><br>POST <span class="hljs-regexp">/api/</span>articles<span class="hljs-regexp">/789/</span>comments     <span class="hljs-comment"># 為文章創建評論</span><br></code></pre></td></tr></table></figure>
-
-<h3 id="5-使用適當的-HTTP-狀態碼"><a href="#5-使用適當的-HTTP-狀態碼" class="headerlink" title="5. 使用適當的 HTTP 狀態碼"></a>5. <strong>使用適當的 HTTP 狀態碼</strong></h3><ul>
-<li><strong>200 OK</strong>: 請求成功</li>
-<li><strong>201 Created</strong>: 資源創建成功</li>
-<li><strong>204 No Content</strong>: 成功但無返回內容</li>
-<li><strong>400 Bad Request</strong>: 請求錯誤</li>
-<li><strong>401 Unauthorized</strong>: 未授權</li>
-<li><strong>403 Forbidden</strong>: 禁止訪問</li>
-<li><strong>404 Not Found</strong>: 資源不存在</li>
-<li><strong>500 Internal Server Error</strong>: 伺服器錯誤</li>
-</ul>
-<h3 id="6-版本控制（Versioning）"><a href="#6-版本控制（Versioning）" class="headerlink" title="6. 版本控制（Versioning）"></a>6. <strong>版本控制（Versioning）</strong></h3><p>在 API 設計中包含版本號</p>
-<p><strong>範例：</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">/api/v1/users<br>/api/v2/users<br></code></pre></td></tr></table></figure>
-<p>或使用 Header：</p>
-<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada"><span class="hljs-keyword">Accept</span>: application/vnd.myapi.v1+json<br></code></pre></td></tr></table></figure>
-
-<h3 id="7-使用查詢參數進行過濾、排序、分頁"><a href="#7-使用查詢參數進行過濾、排序、分頁" class="headerlink" title="7. 使用查詢參數進行過濾、排序、分頁"></a>7. <strong>使用查詢參數進行過濾、排序、分頁</strong></h3><p><strong>範例：</strong></p>
-<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-built_in">GET</span> /api/products?<span class="hljs-attribute">category</span>=electronics&amp;sort=price&amp;order=desc<br><span class="hljs-built_in">GET</span> /api/users?<span class="hljs-attribute">page</span>=2&amp;limit=20<br><span class="hljs-built_in">GET</span> /api/articles?<span class="hljs-attribute">search</span>=technology&amp;published=true<br></code></pre></td></tr></table></figure>
-
-<h3 id="8-提供有意義的錯誤訊息"><a href="#8-提供有意義的錯誤訊息" class="headerlink" title="8. 提供有意義的錯誤訊息"></a>8. <strong>提供有意義的錯誤訊息</strong></h3><p><strong>範例回應：</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INVALID_EMAIL&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;提供的電子郵件格式不正確&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;field&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;email&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="完整範例：部落格-API"><a href="#完整範例：部落格-API" class="headerlink" title="完整範例：部落格 API"></a>完整範例：部落格 API</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 文章（Articles）</span><br>GET    /api/v1/articles                 <span class="hljs-comment"># 獲取所有文章</span><br>GET    /api/v1/articles?page=1&amp;<span class="hljs-built_in">limit</span>=10 <span class="hljs-comment"># 分頁獲取</span><br>GET    /api/v1/articles/123             <span class="hljs-comment"># 獲取特定文章</span><br>POST   /api/v1/articles                 <span class="hljs-comment"># 創建新文章</span><br>PUT    /api/v1/articles/123             <span class="hljs-comment"># 更新文章</span><br>DELETE /api/v1/articles/123             <span class="hljs-comment"># 刪除文章</span><br><br><span class="hljs-comment"># 評論（Comments）</span><br>GET    /api/v1/articles/123/comments    <span class="hljs-comment"># 獲取文章的所有評論</span><br>POST   /api/v1/articles/123/comments    <span class="hljs-comment"># 為文章添加評論</span><br>DELETE /api/v1/comments/456             <span class="hljs-comment"># 刪除特定評論</span><br><br><span class="hljs-comment"># 作者（Authors）</span><br>GET    /api/v1/authors/789/articles     <span class="hljs-comment"># 獲取作者的所有文章</span><br></code></pre></td></tr></table></figure>
 
                 
               </div>
@@ -481,7 +449,7 @@
   
     <span>></span>
     
-  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/API-%E8%A8%AD%E8%A8%88/" class="category-chain-item">API 設計</a>
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/Laravel/" class="category-chain-item">Laravel</a>
   
   
 
@@ -498,13 +466,13 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
+        <a href="/tags/Laravel/" class="print-no-link">#Laravel</a>
+      
+        <a href="/tags/Elasticsearch/" class="print-no-link">#Elasticsearch</a>
+      
+        <a href="/tags/Scout/" class="print-no-link">#Scout</a>
+      
         <a href="/tags/%E5%BE%8C%E7%AB%AF%E9%96%8B%E7%99%BC/" class="print-no-link">#後端開發</a>
-      
-        <a href="/tags/API/" class="print-no-link">#API</a>
-      
-        <a href="/tags/REST/" class="print-no-link">#REST</a>
-      
-        <a href="/tags/%E8%BB%9F%E9%AB%94%E6%9E%B6%E6%A7%8B/" class="print-no-link">#軟體架構</a>
       
     </div>
   
@@ -516,8 +484,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>RESTful API 設計主要原則</div>
-      <div>https://jh0712.github.io/2025/10/03/restful-api-design-principles/</div>
+      <div>Laravel Scout 更新 Elasticsearch Mappings 的兩種方式</div>
+      <div>https://jh0712.github.io/2025/03/19/laravel-scout-elasticsearch-mapping/</div>
     </div>
     <div class="license-meta">
       
@@ -529,7 +497,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>發布於</div>
-          <div>2025年10月3日</div>
+          <div>2025年3月19日</div>
         </div>
       
       
@@ -561,9 +529,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">
+                      <a href="/2025/04/19/php-enum-object-conversion/" title="PHP 枚舉（Enum）在物件轉換中的行為">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Dead Code 清理實戰：如何安全刪除一萬四千行程式碼</span>
+                        <span class="hidden-mobile">PHP 枚舉（Enum）在物件轉換中的行為</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -571,8 +539,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2025/04/19/php-enum-object-conversion/" title="PHP 枚舉（Enum）在物件轉換中的行為">
-                        <span class="hidden-mobile">PHP 枚舉（Enum）在物件轉換中的行為</span>
+                      <a href="/2024/01/01/linux-swap-memory-management/" title="Linux 記憶體不足解法：建立與啟用 Swap 教學">
+                        <span class="hidden-mobile">Linux 記憶體不足解法：建立與啟用 Swap 教學</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
