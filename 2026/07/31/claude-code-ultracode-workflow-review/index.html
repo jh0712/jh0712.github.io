@@ -19,24 +19,30 @@
   <meta name="author" content="Kite">
   <meta name="keywords" content="">
   
-    <meta name="description" content="基本概念PHP 8.1 引入的枚舉（Enum）提供了定義一組命名常數的方式。PHP 支援兩種類型的枚舉：  純枚舉（Pure Enums）：僅包含名稱 備份枚舉（Backed Enums）：包含名稱和對應的值（字串或整數）  備份枚舉的自動轉換行為備份枚舉在以下情境中會自動轉換為其備份值：  轉換為 JSON 轉換為陣列 序列化 資料庫儲存 作為陣列元素  關鍵特性 當備份枚舉被放入陣列並轉換為">
+    <meta name="description" content="Claude Code 的 ultracode 模式會把任務拆給多個 subagent 並行處理，並用「對抗性驗證」確保品質。我拿一個 API 文件補寫任務實測了一輪：品質我給 8&#x2F;10，但一個簡單任務就吃掉我 27% 的用量額度，而且產出仍需要另一層驗收。這篇記錄實際的運作方式、token 成本，以及它為什麼（還）無法取代我原本的多 session 工作流。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="PHP 枚舉（Enum）在物件轉換中的行為">
-<meta property="og:url" content="https://jh0712.github.io/2025/04/19/php-enum-object-conversion/index.html">
+<meta property="og:title" content="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？">
+<meta property="og:url" content="https://jh0712.github.io/2026/07/31/claude-code-ultracode-workflow-review/index.html">
 <meta property="og:site_name" content="Kite Blog">
-<meta property="og:description" content="基本概念PHP 8.1 引入的枚舉（Enum）提供了定義一組命名常數的方式。PHP 支援兩種類型的枚舉：  純枚舉（Pure Enums）：僅包含名稱 備份枚舉（Backed Enums）：包含名稱和對應的值（字串或整數）  備份枚舉的自動轉換行為備份枚舉在以下情境中會自動轉換為其備份值：  轉換為 JSON 轉換為陣列 序列化 資料庫儲存 作為陣列元素  關鍵特性 當備份枚舉被放入陣列並轉換為">
+<meta property="og:description" content="Claude Code 的 ultracode 模式會把任務拆給多個 subagent 並行處理，並用「對抗性驗證」確保品質。我拿一個 API 文件補寫任務實測了一輪：品質我給 8&#x2F;10，但一個簡單任務就吃掉我 27% 的用量額度，而且產出仍需要另一層驗收。這篇記錄實際的運作方式、token 成本，以及它為什麼（還）無法取代我原本的多 session 工作流。">
 <meta property="og:locale" content="zh_TW">
-<meta property="article:published_time" content="2025-04-19T07:27:00.000Z">
-<meta property="article:modified_time" content="2026-07-25T06:38:11.060Z">
+<meta property="og:image" content="https://jh0712.github.io/img/ultracode/ultracode-workflow-document-phase.png">
+<meta property="og:image" content="https://jh0712.github.io/img/ultracode/ultracode-workflow-verify-phase.png">
+<meta property="og:image" content="https://jh0712.github.io/img/ultracode/ultracode-agent-view.png">
+<meta property="article:published_time" content="2026-07-31T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-30T17:56:53.513Z">
 <meta property="article:author" content="Kite">
-<meta property="article:tag" content="後端開發">
-<meta property="article:tag" content="PHP">
-<meta property="article:tag" content="Enum">
+<meta property="article:tag" content="Claude Code">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="Multi-Agent">
+<meta property="article:tag" content="Workflow">
+<meta property="article:tag" content="工程實踐">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://jh0712.github.io/img/ultracode/ultracode-workflow-document-phase.png">
   
   
   
-  <title>PHP 枚舉（Enum）在物件轉換中的行為 - Kite Blog</title>
+  <title>Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？ - Kite Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -331,7 +337,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="PHP 枚舉（Enum）在物件轉換中的行為"></span>
+            <span id="subtitle" data-typed-text="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？"></span>
           
         </div>
 
@@ -342,8 +348,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-04-19 15:27" pubdate>
-          2025年4月19日 下午
+        <time datetime="2026-07-31 10:00" pubdate>
+          2026年7月31日 上午
         </time>
       </span>
     
@@ -354,7 +360,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2k 字
+          4.1k 字
         
       </span>
     
@@ -365,7 +371,7 @@
         
         
         
-          17 分鐘
+          35 分鐘
         
       </span>
     
@@ -404,49 +410,72 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">PHP 枚舉（Enum）在物件轉換中的行為</h1>
+            <h1 id="seo-header">Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><p>PHP 8.1 引入的枚舉（Enum）提供了定義一組命名常數的方式。PHP 支援兩種類型的枚舉：</p>
+                <blockquote>
+<p>Claude Code 的 ultracode 模式會把任務拆給多個 subagent 並行處理，並用「對抗性驗證」確保品質。我拿一個 API 文件補寫任務實測了一輪：品質我給 8&#x2F;10，但一個簡單任務就吃掉我 27% 的用量額度，而且產出仍需要另一層驗收。這篇記錄實際的運作方式、token 成本，以及它為什麼（還）無法取代我原本的多 session 工作流。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="什麼是-ultracode"><a href="#什麼是-ultracode" class="headerlink" title="什麼是 ultracode"></a>什麼是 ultracode</h2><p>Claude Code 有一個 multi-agent 編排功能 <strong>dynamic workflow</strong>：Claude 針對你描述的任務寫一支編排腳本，把工作拆成多個動態規劃的 phase，每個 phase 展開多個 subagent 並行執行。<strong>ultracode</strong> 則是觸發它的方式，兩者是不同層次的概念。這篇是我第一次實際使用的心得。</p>
+<p>依<a target="_blank" rel="noopener" href="https://code.claude.com/docs/en/workflows">官方文件</a>，觸發方式有三種：</p>
+<ul>
+<li><strong>單次任務</strong>：在 prompt 裡包含 <code>ultracode</code> 關鍵字，這次任務就會以 workflow 執行；直接用自然語言說「use a workflow」也可以。順帶一提，v2.1.160 之前的觸發關鍵字叫 <code>workflow</code>。</li>
+<li><strong>整個 session</strong>：下 <code>/effort ultracode</code>（或啟動時 <code>claude --effort ultracode</code>），Claude 會對每個實質任務自動規劃 workflow。</li>
+<li><strong>內建指令</strong>：<code>/deep-research &lt;問題&gt;</code> 是內建的 workflow；自己跑過的 workflow 也可以在 <code>/workflows</code> 裡按 <code>s</code> 存成指令重複使用。</li>
+</ul>
+<p>我的測試任務：讓它同步一份落後於程式碼的 API 文件——掃描 codebase、比對現有文件、補上缺漏的 endpoint。</p>
+<p>選這個題目是刻意的：寫 API 文件價值較低，是<strong>低風險、可拆分、做壞了也沒損失</strong>的工作，適合拿來觀察新模式的能力和流程全貌。用邊緣任務試新工具，學習成本最低——不要第一次就拿核心功能去試。</p>
+<h2 id="實際的運作方式：17-個寫、16-個驗證"><a href="#實際的運作方式：17-個寫、16-個驗證" class="headerlink" title="實際的運作方式：17 個寫、16 個驗證"></a>實際的運作方式：17 個寫、16 個驗證</h2><p>任務開始後，它自動規劃了兩個 phase：</p>
 <ol>
-<li><strong>純枚舉（Pure Enums）</strong>：僅包含名稱</li>
-<li><strong>備份枚舉（Backed Enums）</strong>：包含名稱和對應的值（字串或整數）</li>
+<li><strong>Document phase</strong>：開了 17 個 agent，分批讀 code、各自負責一段 endpoint 的文件撰寫。</li>
+<li><strong>Verify phase</strong>：另開 16 個 agent，每個負責驗證一部分產出。</li>
 </ol>
-<h2 id="備份枚舉的自動轉換行為"><a href="#備份枚舉的自動轉換行為" class="headerlink" title="備份枚舉的自動轉換行為"></a>備份枚舉的自動轉換行為</h2><p>備份枚舉在以下情境中會自動轉換為其備份值：</p>
-<ul>
-<li>轉換為 JSON</li>
-<li>轉換為陣列</li>
-<li>序列化</li>
-<li>資料庫儲存</li>
-<li>作為陣列元素</li>
-</ul>
-<h3 id="關鍵特性"><a href="#關鍵特性" class="headerlink" title="關鍵特性"></a>關鍵特性</h3><ul>
-<li>當備份枚舉被放入陣列並轉換為 JSON 時，會顯示為其備份值而非枚舉名稱</li>
-<li>這種行為是 PHP 的內建特性，不需要額外程式碼</li>
-<li>對於字串備份枚舉，會轉換為字串值；對於整數備份枚舉，會轉換為整數值</li>
-</ul>
-<h2 id="程式碼示例"><a href="#程式碼示例" class="headerlink" title="程式碼示例"></a>程式碼示例</h2><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-comment">// 定義備份枚舉</span><br><span class="hljs-class"><span class="hljs-keyword">enum</span> <span class="hljs-title">StatusEnum</span>: <span class="hljs-title">string</span></span><br><span class="hljs-class"></span>&#123;<br>    <span class="hljs-keyword">case</span> Active = <span class="hljs-string">&#x27;active&#x27;</span>;<br>    <span class="hljs-keyword">case</span> Pending = <span class="hljs-string">&#x27;pending&#x27;</span>;<br>    <span class="hljs-keyword">case</span> Inactive = <span class="hljs-string">&#x27;inactive&#x27;</span>;<br>&#125;<br><br><span class="hljs-comment">// 在物件中使用枚舉</span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">User</span></span><br><span class="hljs-class"></span>&#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">__construct</span>(<span class="hljs-params"></span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> <span class="hljs-variable">$name</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-keyword">public</span> StatusEnum <span class="hljs-variable">$status</span></span></span><br><span class="hljs-params"><span class="hljs-function">    </span>) </span>&#123;&#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">toArray</span>(<span class="hljs-params"></span>): <span class="hljs-title">array</span></span><br><span class="hljs-function">    </span>&#123;<br>        <span class="hljs-keyword">return</span> [<br>            <span class="hljs-string">&#x27;name&#x27;</span> =&gt; <span class="hljs-variable language_">$this</span>-&gt;name,<br>            <span class="hljs-string">&#x27;status&#x27;</span> =&gt; <span class="hljs-variable language_">$this</span>-&gt;status, <span class="hljs-comment">// 在轉換過程中，枚舉會變為字串</span><br>        ];<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 使用範例</span><br><span class="hljs-variable">$user</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">User</span>(<span class="hljs-string">&#x27;王小明&#x27;</span>, <span class="hljs-title class_">StatusEnum</span>::<span class="hljs-variable constant_">Active</span>);<br><span class="hljs-variable">$array</span> = <span class="hljs-variable">$user</span>-&gt;<span class="hljs-title function_ invoke__">toArray</span>(); <span class="hljs-comment">// [&#x27;name&#x27; =&gt; &#x27;王小明&#x27;, &#x27;status&#x27; =&gt; &#x27;active&#x27;]</span><br><span class="hljs-variable">$json</span> = <span class="hljs-title function_ invoke__">json_encode</span>(<span class="hljs-variable">$array</span>); <span class="hljs-comment">// &#123;&quot;name&quot;:&quot;王小明&quot;,&quot;status&quot;:&quot;active&quot;&#125;</span><br></code></pre></td></tr></table></figure>
+<p><img src="/img/ultracode/ultracode-workflow-document-phase.png" srcset="/img/loading.gif" lazyload alt="Document phase：17 個 agent 並行撰寫文件"></p>
+<p>有趣的是驗證的設計。每個驗證不是「看一遍沒問題就過」，而是對抗性的跑法：再啟動 <strong>3 個小 agent 專門嘗試推翻</strong>這個產出，至少 2 個得出「無法推翻」才算通過。從執行輸出來看，行為跟這個模式一致；不過老實說，UI 計數器只顯示頂層的 33 個 agent，懷疑者是否另計、實際總數多少，我沒能從介面確認。</p>
+<p>這套 adversarial verify 在<a target="_blank" rel="noopener" href="https://code.claude.com/docs/en/workflows">官方文件</a>裡只有概念性描述：獨立 agent 交叉驗證彼此的發現、對每個 claim 投票淘汰。「懷疑者專門嘗試推翻、多數決存活」的具體框架，出自 azukiazusa 對內建 <code>/deep-research</code> 的實作解析（見文末參考資料）——每個 claim 由 3 個獨立懷疑者投票、2&#x2F;3 決：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs js"><span class="hljs-comment">// Adversarial verify: spawn N independent skeptics per finding, each prompted</span><br><span class="hljs-comment">// to REFUTE. Kill if ≥majority refute. Prevents plausible-but-wrong findings</span><br><span class="hljs-comment">// from surviving.</span><br><span class="hljs-keyword">const</span> votes = <span class="hljs-keyword">await</span> <span class="hljs-title function_">parallel</span>(<span class="hljs-title class_">Array</span>.<span class="hljs-title function_">from</span>(&#123;<span class="hljs-attr">length</span>: <span class="hljs-number">3</span>&#125;, <span class="hljs-function">() =&gt;</span> <span class="hljs-function">() =&gt;</span><br>  <span class="hljs-title function_">agent</span>(<span class="hljs-string">`Try to refute: <span class="hljs-subst">$&#123;claim&#125;</span>. Default to refuted=true if uncertain.`</span>, &#123;<span class="hljs-attr">schema</span>: <span class="hljs-variable constant_">VERDICT</span>&#125;)))<br><span class="hljs-keyword">const</span> survives = votes.<span class="hljs-title function_">filter</span>(<span class="hljs-title class_">Boolean</span>).<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">v</span> =&gt;</span> !v.<span class="hljs-property">refuted</span>).<span class="hljs-property">length</span> &gt;= <span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
 
-<h2 id="純枚舉的轉換行為"><a href="#純枚舉的轉換行為" class="headerlink" title="純枚舉的轉換行為"></a>純枚舉的轉換行為</h2><p>與備份枚舉不同，純枚舉在轉換時：</p>
+<blockquote>
+<p>註：這段是 azukiazusa 原始碼的簡化改寫。另外留意官方在 v2.1.196 修正了 runtime 層的錯誤處理：驗證 agent 因 rate limit 或 API 錯誤而「無法檢查」的 claim，會列為 unverified、不算作 refuted——這跟範例 prompt 裡「不確定時預設算推翻」的判準是不同層次的事，照抄設計前請分清楚。</p>
+</blockquote>
+<p>「預設懷疑、多數決存活」的設計，跟我之前做大規模 dead code 清理時手動安排三個獨立驗證 agent 的思路一致——差別是 ultracode 把它變成內建機制。</p>
+<p><img src="/img/ultracode/ultracode-workflow-verify-phase.png" srcset="/img/loading.gif" lazyload alt="Verify phase：16 個 agent 對抗性驗證"></p>
+<h2 id="代價與品質：27-額度買到-8-10-的品質"><a href="#代價與品質：27-額度買到-8-10-的品質" class="headerlink" title="代價與品質：27% 額度買到 8&#x2F;10 的品質"></a>代價與品質：27% 額度買到 8&#x2F;10 的品質</h2><p>這一切不是免費的：</p>
 <ul>
-<li>不會自動轉換為簡單值</li>
-<li>當嘗試 JSON 編碼時會產生錯誤（除非實現 JsonSerializable 接口）</li>
-<li>需要手動處理其轉換邏輯</li>
+<li>這個任務總共消耗了我 <strong>Premium seat 額度的 27%</strong>（指 <code>/usage</code> 裡 5 小時滾動窗口的額度）。數字是任務前後對照 <code>/usage</code> 用量畫面得出的，沒有精確的 token 數。依<a target="_blank" rel="noopener" href="https://claude.com/pricing">官方定價頁</a>，Premium seat 的用量是 Standard seat 的 <strong>5 倍</strong>。假設額度按同一倍率換算，27% × 5 ≈ <strong>1.35 個 Standard seat 的同期額度</strong>——一個 API 文件補寫任務，就吃掉超過一整個 Standard seat。</li>
+<li>消耗大的原因之一：workflow 的 subagent 預設繼承 parent agent 的 model，所以 33 個 agent 全部是用最高階的 model 在跑。要注意這只是預設值、不是建議——官方文件的 Cost 章節反而建議對不需要最強模型的 stage 指定較小的 model。換句話說，這次的成本有一部分是我沒做 model 分層優化的結果。</li>
+<li>而且這只是一個複雜度不高的文件任務。如果是需要大量驗證的大型重構，token 只會更多。</li>
 </ul>
-<h3 id="程式碼示例-1"><a href="#程式碼示例-1" class="headerlink" title="程式碼示例"></a>程式碼示例</h3><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-comment">// 定義純枚舉</span><br><span class="hljs-class"><span class="hljs-keyword">enum</span> <span class="hljs-title">Direction</span></span><br><span class="hljs-class"></span>&#123;<br>    <span class="hljs-keyword">case</span> North;<br>    <span class="hljs-keyword">case</span> East;<br>    <span class="hljs-keyword">case</span> South;<br>    <span class="hljs-keyword">case</span> West;<br>&#125;<br><br><span class="hljs-comment">// 嘗試直接轉換純枚舉</span><br><span class="hljs-variable">$direction</span> = <span class="hljs-title class_">Direction</span>::<span class="hljs-variable constant_">North</span>;<br><br><span class="hljs-comment">// 這會產生錯誤：不能將枚舉對象轉換為字串</span><br><span class="hljs-comment">// $text = &quot;方向是：&quot; . $direction;</span><br><br><span class="hljs-comment">// 嘗試編碼包含純枚舉的陣列</span><br><span class="hljs-variable">$data</span> = [<span class="hljs-string">&#x27;direction&#x27;</span> =&gt; <span class="hljs-variable">$direction</span>];<br><span class="hljs-comment">// 這會產生錯誤：無法 JSON 編碼 - 物件類型 Direction 不支援</span><br><span class="hljs-comment">// $json = json_encode($data);</span><br><br><span class="hljs-comment">// 正確做法：實現 JsonSerializable 接口</span><br><span class="hljs-class"><span class="hljs-keyword">enum</span> <span class="hljs-title">DirectionWithJson</span> <span class="hljs-keyword">implements</span> \<span class="hljs-title">JsonSerializable</span></span><br><span class="hljs-class"></span>&#123;<br>    <span class="hljs-keyword">case</span> North;<br>    <span class="hljs-keyword">case</span> East;<br>    <span class="hljs-keyword">case</span> South;<br>    <span class="hljs-keyword">case</span> West;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">jsonSerialize</span>(<span class="hljs-params"></span>): <span class="hljs-title">mixed</span></span><br><span class="hljs-function">    </span>&#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">$this</span>-&gt;name; <span class="hljs-comment">// 返回枚舉名稱</span><br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 現在可以成功編碼</span><br><span class="hljs-variable">$direction</span> = <span class="hljs-title class_">DirectionWithJson</span>::<span class="hljs-variable constant_">North</span>;<br><span class="hljs-variable">$data</span> = [<span class="hljs-string">&#x27;direction&#x27;</span> =&gt; <span class="hljs-variable">$direction</span>];<br><span class="hljs-variable">$json</span> = <span class="hljs-title function_ invoke__">json_encode</span>(<span class="hljs-variable">$data</span>); <span class="hljs-comment">// &#123;&quot;direction&quot;:&quot;North&quot;&#125;</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="實用技巧"><a href="#實用技巧" class="headerlink" title="實用技巧"></a>實用技巧</h2><ol>
-<li><strong>自訂序列化行為</strong>：實現 <code>JsonSerializable</code> 接口可自訂序列化行為</li>
-<li><strong>枚舉方法</strong>：可在枚舉中添加方法以提供更多功能</li>
-<li><strong>轉換輔助函數</strong>：建立專用函數處理枚舉的特殊轉換需求</li>
-</ol>
-<h2 id="效能考量"><a href="#效能考量" class="headerlink" title="效能考量"></a>效能考量</h2><ul>
-<li>備份枚舉的自動轉換無需額外處理，效能開銷極小</li>
-<li>轉換大量包含枚舉的物件時，效能表現良好</li>
+<p>那這些 token 買到了什麼品質？我給 <strong>8&#x2F;10</strong>：大部分 endpoint 補寫得正確可用，但仍有一些小錯誤——而且是連內建對抗性驗證都沒攔下來的那種。也就是說，驗證機制能把品質拉高，但不等於零錯誤，產出仍需要其他測試（或人工抽查）守門。</p>
+<h2 id="週邊機制的觀察：recap-讚，insight-雞肋"><a href="#週邊機制的觀察：recap-讚，insight-雞肋" class="headerlink" title="週邊機制的觀察：recap 讚，insight 雞肋"></a>週邊機制的觀察：recap 讚，insight 雞肋</h2><p>測試過程中還觀察到兩個輸出機制：recap 和 insight。它們跟 ultracode 本身沒有直接關係——但在多 agent 同時跑的情境下，體感差異被放得特別大：</p>
+<p><strong>recap（好用）</strong>：每個段落完成後，視窗下方會小結目前的工作狀態，例如：</p>
+<blockquote>
+<p>※ recap: API 文件同步任務已完成：補了約 64 個缺漏 endpoint、修了 2 個過時條目，並開了 PR。下一步是等你決定要盯 CI，還是開工 follow-up issue（格式統一）。</p>
+</blockquote>
+<p>多個 agent 同時在跑的時候，很容易忘記誰在做什麼、做到哪——recap 直接解決這個問題。</p>
+<p><strong>insight（常常多餘）</strong>：這是我對另一種行為的自稱，官方文件查不到這個名字——它會在回覆中插入「我為什麼這樣做」的說明區塊，例如解釋它刻意用 <code>gh issue create</code> 而不是會順便切 branch 的 skill，避免把我從目前的 PR branch 切走。判斷本身是對的，但這類內容常跟既有回覆重複，變成雜訊。</p>
+<h2 id="實驗的意外發現：Agent-View"><a href="#實驗的意外發現：Agent-View" class="headerlink" title="實驗的意外發現：Agent View"></a>實驗的意外發現：Agent View</h2><p>為了掌握多個 agent 的狀態，我順帶發現了 Claude 提供的 Agent View（<code>claude agents</code>）：集中管理 session 的介面，一個畫面看到各 session 的狀態（幾個在跑、幾個等輸入、幾個完成），直觀好上手。</p>
+<p>不過要注意它的顆粒度是 <strong>session 層級</strong>：ultracode workflow 展開的那幾十個 subagent 並不會逐一顯示在 Agent View 裡，你看到的只是「跑這個 workflow 的那一個 session」；subagent 的進度得回到該 session 的 workflow 進度畫面才看得到。</p>
+<p><img src="/img/ultracode/ultracode-agent-view.png" srcset="/img/loading.gif" lazyload alt="Agent View：session 層級的集中管理介面"></p>
+<p>真正的落差，要拿它對照我原本的工作流才看得出來。我的多 session 工作流是「<strong>中控台模式</strong>」——這是我自己設計的 AI 協作方式，不是 Claude 官方的 agent teams 功能：一個主 session 當指揮中心，其他 agent 的產出回到中控台，由它幫我總結、甚至代替我回覆其他 agent。Agent View 能「看」到所有 session 的狀態，但無法像中控台一樣<strong>總結所有 task 的內容</strong>，要代替回覆也得用特殊方式才做得到。它是個好介面，但還不足以取代中控台。</p>
+<h2 id="結論：ultracode-workflow-可以用，但產出要驗收"><a href="#結論：ultracode-workflow-可以用，但產出要驗收" class="headerlink" title="結論：ultracode workflow 可以用，但產出要驗收"></a>結論：ultracode workflow 可以用，但產出要驗收</h2><p>回到標題的問題，我的答案是：</p>
+<ul>
+<li><strong>ultracode workflow 可以拿來做某些複雜任務</strong>——邊界清楚、可平行拆分、需要驗證品質的批次工作（文件補寫、大規模清理、審查類），前提是你願意為它付 token。但產出不能免驗收：這次 8&#x2F;10 的品質仍有小錯誤混過了內建驗證，<strong>它的產出應該當作「高品質的草稿」，再用其他測試做最後的守門</strong>。</li>
+<li><strong>Agent View 是好介面，但取代不了中控台模式</strong>——需要跨任務統籌、頻繁人工介入決策的日常開發，主力還是我原本的工作流。</li>
+<li>所以兩者跟既有工作流是<strong>搭配關係，不是取代關係</strong>。</li>
 </ul>
-<p>這種自動轉換機制使得 PHP 枚舉非常適合用於 API 回應和資料序列化的情境，無需額外的轉換邏輯即可獲得適合的資料表示形式。</p>
+<p>比起功能本身的評測，這次測試最大的收穫是<strong>偷學了它的驗證設計</strong>。「每個產出啟動獨立的懷疑者 agent 嘗試推翻、多數決存活」——至少從這次的執行輸出看，它的驗證是照這個模式跑的——這個做法不需要 ultracode 也能用：後續我在開發較複雜的功能時，也會另外啟動三個 agent 評估產出，用同樣的對抗性思路把關品質。</p>
+<p>這也是拿邊緣任務試新工具的另一層價值：就算工具最後沒有進入你的日常工作流，它的設計思維也可能留下來，變成你自己流程的一部分。</p>
+<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://code.claude.com/docs/en/workflows">Claude Code 官方文件 — Workflows</a></li>
+<li><a target="_blank" rel="noopener" href="https://claude-world.com/articles/what-is-a-workflow-multi-agent-orchestration/">What Is a Workflow? Claude Code’s Multi-Agent Orchestration, Explained</a> — workflow 的設計理念與 quality patterns（含 adversarial verify）</li>
+<li><a target="_blank" rel="noopener" href="https://azukiazusa.dev/en/blog/claude-code-dynamic-workflow/">Trying Dynamic Workflow in Claude Code</a> — <code>/deep-research</code> 與自訂 workflow 的實測，含 3 票對抗性驗證與 <code>agent()</code> &#x2F; <code>parallel()</code> &#x2F; <code>pipeline()</code> API 範例</li>
+<li><a target="_blank" rel="noopener" href="https://claude.com/pricing">Claude 官方定價頁</a> — Standard &#x2F; Premium seat 用量倍率依據</li>
+</ul>
 
                 
               </div>
@@ -470,7 +499,7 @@
   
     <span>></span>
     
-  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/PHP/" class="category-chain-item">PHP</a>
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
   
   
 
@@ -487,11 +516,15 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%BE%8C%E7%AB%AF%E9%96%8B%E7%99%BC/" class="print-no-link">#後端開發</a>
+        <a href="/tags/Claude-Code/" class="print-no-link">#Claude Code</a>
       
-        <a href="/tags/PHP/" class="print-no-link">#PHP</a>
+        <a href="/tags/AI-Agent/" class="print-no-link">#AI Agent</a>
       
-        <a href="/tags/Enum/" class="print-no-link">#Enum</a>
+        <a href="/tags/Multi-Agent/" class="print-no-link">#Multi-Agent</a>
+      
+        <a href="/tags/Workflow/" class="print-no-link">#Workflow</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
       
     </div>
   
@@ -503,8 +536,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>PHP 枚舉（Enum）在物件轉換中的行為</div>
-      <div>https://jh0712.github.io/2025/04/19/php-enum-object-conversion/</div>
+      <div>Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？</div>
+      <div>https://jh0712.github.io/2026/07/31/claude-code-ultracode-workflow-review/</div>
     </div>
     <div class="license-meta">
       
@@ -516,7 +549,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>發布於</div>
-          <div>2025年4月19日</div>
+          <div>2026年7月31日</div>
         </div>
       
       
@@ -548,18 +581,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2025/07/02/linux-swap-memory-management/" title="Linux 記憶體不足解法：建立與啟用 Swap 教學">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Linux 記憶體不足解法：建立與啟用 Swap 教學</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2025/03/19/laravel-scout-elasticsearch-mapping/" title="Laravel Scout 更新 Elasticsearch Mappings 的兩種方式">
-                        <span class="hidden-mobile">Laravel Scout 更新 Elasticsearch Mappings 的兩種方式</span>
+                      <a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">
+                        <span class="hidden-mobile">Dead Code 清理實戰：如何安全刪除一萬四千行程式碼</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
