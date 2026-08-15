@@ -19,30 +19,26 @@
   <meta name="author" content="Kite">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Claude Code 的 ultracode 模式會把任務拆給多個 subagent 並行處理，並用「對抗性驗證」確保品質。我拿一個 API 文件補寫任務實測了一輪：品質我給 8&#x2F;10，但一個簡單任務就吃掉我 27% 的用量額度，而且產出仍需要另一層驗收。這篇記錄實際的運作方式、token 成本，以及它為什麼（還）無法取代我原本的多 session 工作流。">
+    <meta name="description" content="這是上一篇 dead code 清理的續作。這次的對象是 Next.js 專案裡的 page route：2026 年 8 月執行，盤點 70 條、刪除 16 條，AI 協作使用 Claude Code（Opus 5 model）。行數比上次少一個量級，但每一條的決策成本都更高——因為 route 的「沒人用」比一般 dead code 難證明得多。這篇一樣不談刪了什麼，談方法論：怎麼判斷一條">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？">
-<meta property="og:url" content="https://jh0712.github.io/2026/07/31/claude-code-ultracode-workflow-review/index.html">
+<meta property="og:title" content="Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難">
+<meta property="og:url" content="https://jh0712.github.io/2026/08/16/route-cleanup-in-practice/index.html">
 <meta property="og:site_name" content="Kite Blog">
-<meta property="og:description" content="Claude Code 的 ultracode 模式會把任務拆給多個 subagent 並行處理，並用「對抗性驗證」確保品質。我拿一個 API 文件補寫任務實測了一輪：品質我給 8&#x2F;10，但一個簡單任務就吃掉我 27% 的用量額度，而且產出仍需要另一層驗收。這篇記錄實際的運作方式、token 成本，以及它為什麼（還）無法取代我原本的多 session 工作流。">
+<meta property="og:description" content="這是上一篇 dead code 清理的續作。這次的對象是 Next.js 專案裡的 page route：2026 年 8 月執行，盤點 70 條、刪除 16 條，AI 協作使用 Claude Code（Opus 5 model）。行數比上次少一個量級，但每一條的決策成本都更高——因為 route 的「沒人用」比一般 dead code 難證明得多。這篇一樣不談刪了什麼，談方法論：怎麼判斷一條">
 <meta property="og:locale" content="zh_TW">
-<meta property="og:image" content="https://jh0712.github.io/img/ultracode/ultracode-workflow-document-phase.png">
-<meta property="og:image" content="https://jh0712.github.io/img/ultracode/ultracode-workflow-verify-phase.png">
-<meta property="og:image" content="https://jh0712.github.io/img/ultracode/ultracode-agent-view.png">
-<meta property="article:published_time" content="2026-07-31T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-30T17:56:53.513Z">
+<meta property="article:published_time" content="2026-08-16T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-15T16:17:21.777Z">
 <meta property="article:author" content="Kite">
-<meta property="article:tag" content="Claude Code">
 <meta property="article:tag" content="AI Agent">
-<meta property="article:tag" content="Multi-Agent">
-<meta property="article:tag" content="Workflow">
 <meta property="article:tag" content="工程實踐">
+<meta property="article:tag" content="Dead Code">
+<meta property="article:tag" content="重構">
+<meta property="article:tag" content="Next.js">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://jh0712.github.io/img/ultracode/ultracode-workflow-document-phase.png">
   
   
   
-  <title>Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？ - Kite Blog</title>
+  <title>Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難 - Kite Blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -337,7 +333,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？"></span>
+            <span id="subtitle" data-typed-text="Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難"></span>
           
         </div>
 
@@ -348,8 +344,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2026-07-31 10:00" pubdate>
-          2026年7月31日 上午
+        <time datetime="2026-08-16 10:00" pubdate>
+          2026年8月16日 上午
         </time>
       </span>
     
@@ -360,7 +356,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.1k 字
+          5.1k 字
         
       </span>
     
@@ -371,7 +367,7 @@
         
         
         
-          35 分鐘
+          43 分鐘
         
       </span>
     
@@ -410,72 +406,150 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？</h1>
+            <h1 id="seo-header">Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難</h1>
             
             
               <div class="markdown-body">
                 
                 <blockquote>
-<p>Claude Code 的 ultracode 模式會把任務拆給多個 subagent 並行處理，並用「對抗性驗證」確保品質。我拿一個 API 文件補寫任務實測了一輪：品質我給 8&#x2F;10，但一個簡單任務就吃掉我 27% 的用量額度，而且產出仍需要另一層驗收。這篇記錄實際的運作方式、token 成本，以及它為什麼（還）無法取代我原本的多 session 工作流。</p>
+<p>這是<a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">上一篇 dead code 清理</a>的續作。這次的對象是 Next.js 專案裡的 page route：2026 年 8 月執行，盤點 70 條、刪除 16 條，AI 協作使用 Claude Code（Opus 5 model）。行數比上次少一個量級，但每一條的決策成本都更高——因為 route 的「沒人用」比一般 dead code 難證明得多。這篇一樣不談刪了什麼，談方法論：怎麼判斷一條 route 能不能刪，以及靜態掃描會在哪些地方騙你。</p>
 </blockquote>
 <span id="more"></span>
 
-<h2 id="什麼是-ultracode"><a href="#什麼是-ultracode" class="headerlink" title="什麼是 ultracode"></a>什麼是 ultracode</h2><p>Claude Code 有一個 multi-agent 編排功能 <strong>dynamic workflow</strong>：Claude 針對你描述的任務寫一支編排腳本，把工作拆成多個動態規劃的 phase，每個 phase 展開多個 subagent 並行執行。<strong>ultracode</strong> 則是觸發它的方式，兩者是不同層次的概念。這篇是我第一次實際使用的心得。</p>
-<p>依<a target="_blank" rel="noopener" href="https://code.claude.com/docs/en/workflows">官方文件</a>，觸發方式有三種：</p>
+<p>背景：專案早期使用了現成模板快速起步，多輪迭代後累積了大量模板遺留頁面、實驗頁、被取代的舊流程頁。上一輪 dead code 清理處理掉了「沒被 import 的檔案」，但 route 是另一種生物——它們都被框架「引用」著（檔案就是路由），knip 這類工具掃不出來，需要另一套方法。</p>
+<h2 id="為什麼-Route-≠-Dead-Code（最關鍵的認知）"><a href="#為什麼-Route-≠-Dead-Code（最關鍵的認知）" class="headerlink" title="為什麼 Route ≠ Dead Code（最關鍵的認知）"></a>為什麼 Route ≠ Dead Code（最關鍵的認知）</h2><p>一般 dead code 有個乾淨的判準：<strong>沒被引用 &#x3D; 沒在用</strong>。grep 全 repo、確認零引用、刪掉、build 過，收工。</p>
+<p>Route 沒有這種好事。一條 route 就算站內零連結，仍然可能被系統外部使用：</p>
 <ul>
-<li><strong>單次任務</strong>：在 prompt 裡包含 <code>ultracode</code> 關鍵字，這次任務就會以 workflow 執行；直接用自然語言說「use a workflow」也可以。順帶一提，v2.1.160 之前的觸發關鍵字叫 <code>workflow</code>。</li>
-<li><strong>整個 session</strong>：下 <code>/effort ultracode</code>（或啟動時 <code>claude --effort ultracode</code>），Claude 會對每個實質任務自動規劃 workflow。</li>
-<li><strong>內建指令</strong>：<code>/deep-research &lt;問題&gt;</code> 是內建的 workflow；自己跑過的 workflow 也可以在 <code>/workflows</code> 裡按 <code>s</code> 存成指令重複使用。</li>
+<li><strong>第三方服務引用</strong>：行銷自動化平台（如 customer.io）設定的 email 連結，可能指向一條你以為沒人用的 route。</li>
+<li><strong>其他子網域引用</strong>：別的 subdomain 上的功能會導回主站的特定 route，主站程式碼裡完全看不到。</li>
+<li><strong>後端設定的 return URL</strong>：Stripe 的 <code>success_url</code>、Twilio、OAuth callback——這些寫在後端或第三方後台，前端 repo 裡 grep 不到。</li>
+<li><strong>廣告投放的 destination URL</strong>：設定在廣告後台，程式碼裡不存在。</li>
+<li><strong>舊分享連結與 SEO 已索引的 URL</strong>：使用者的書籤、搜尋引擎的索引，都是活的進入點。</li>
 </ul>
-<p>我的測試任務：讓它同步一份落後於程式碼的 API 文件——掃描 codebase、比對現有文件、補上缺漏的 endpoint。</p>
-<p>選這個題目是刻意的：寫 API 文件價值較低，是<strong>低風險、可拆分、做壞了也沒損失</strong>的工作，適合拿來觀察新模式的能力和流程全貌。用邊緣任務試新工具，學習成本最低——不要第一次就拿核心功能去試。</p>
-<h2 id="實際的運作方式：17-個寫、16-個驗證"><a href="#實際的運作方式：17-個寫、16-個驗證" class="headerlink" title="實際的運作方式：17 個寫、16 個驗證"></a>實際的運作方式：17 個寫、16 個驗證</h2><p>任務開始後，它自動規劃了兩個 phase：</p>
+<p>所以 route 清理的核心命題是：**「站內零引用」只能證明站內沒人用，不能證明沒人用。**這句話決定了整套流程的形狀——靜態掃描只能給你信心的「分級」，最終每一條都需要熟悉系統的人拍板。</p>
+<h2 id="核心理念：AI-做搜集與舉證，人做判斷"><a href="#核心理念：AI-做搜集與舉證，人做判斷" class="headerlink" title="核心理念：AI 做搜集與舉證，人做判斷"></a>核心理念：AI 做搜集與舉證，人做判斷</h2><p>分工和上一次清理一致，但這次人的比重更高：</p>
+<ul>
+<li><strong>AI 負責體力活</strong>：爬 code 盤點所有 route、反查引用、分組、用瀏覽器模擬真實使用者訪問、把證據回寫進盤點文件。</li>
+<li><strong>人負責拍板</strong>：所有需要系統熟悉度的判斷——這條 route 是不是某個第三方在用？那個實驗結束了沒？金流 return URL 有沒有指到這裡？</li>
+<li><strong>整體採保守路線</strong>：寧可漏刪，不要誤刪。刪掉一個少用但關鍵的入口（例如合作夥伴嵌入的頁面），代價遠高於留著一條沒用的 route。</li>
+</ul>
+<p>輔助判斷的資料來源，能用就用：</p>
+<ul>
+<li>系統有埋 usage log 或 nginx access log，可以直接看一條 route 近期有沒有真實流量。</li>
+<li>功能迭代遺留的 route，可以靠 feature flag 的狀態判斷實作是否還會被走到。</li>
+</ul>
+<p><strong>AI 縮短搜集與驗證的時間，決策權留在熟悉系統的人身上。</strong></p>
+<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><h3 id="Step-1：盤點與分組"><a href="#Step-1：盤點與分組" class="headerlink" title="Step 1：盤點與分組"></a>Step 1：盤點與分組</h3><p>請 AI 列出系統所有 page route（這次是 70 條），然後以每條 route 的字面路徑反查全 repo 的 <code>href</code> &#x2F; <code>router.push</code> &#x2F; <code>redirect</code>，再對照選單定義檔與 <code>next.config.js</code> 的 redirects，產出一份盤點文件。</p>
+<p>分組不是按「能不能刪」分，而是按<strong>站內靜態掃描的信心高低</strong>分：</p>
+<table>
+<thead>
+<tr>
+<th>分區</th>
+<th>定義</th>
+<th>意義</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>站內零引用的孤兒頁</td>
+<td>確認成本最低，<strong>但仍要確認</strong></td>
+</tr>
+<tr>
+<td>B</td>
+<td>已經是死路由（redirect 走不到、頁面被掏空），但站內還有連結指著</td>
+<td>刪除會連帶改動使用者看得到的行為</td>
+</tr>
+<tr>
+<td>C</td>
+<td>已知或高度懷疑有站外進入點</td>
+<td>逐條列出「要問誰、查哪個設定」</td>
+</tr>
+<tr>
+<td>D</td>
+<td>確認保留</td>
+<td>記下<strong>為什麼保留</strong>，跟記錄刪除一樣重要</td>
+</tr>
+</tbody></table>
+<p>舉例說明各區長什麼樣子：</p>
+<ul>
+<li><strong>A 區</strong>的典型是「模板遺留」：專案當初套用現成模板起步，整組 dashboard 頁面跟著一起進了 repo。後來選單定義只保留了實際有做的四個入口，其他頁面<strong>沒有任何入口指向、站內 grep 不到任何連結</strong>，但檔案還在、route 還活著，直接打 URL 仍然進得去。</li>
+<li><strong>B 區</strong>是「已經死了但屍體還連著線」：例如一條 route 的 page 檔被掏空成 <code>return null</code>（使用者點進去看到整頁空白），或 <code>next.config.js</code> 已設 redirect、page 內的第二層 redirect 永遠執行不到——但 header 或按鈕上還有連結指著它，刪除就得連那些連結一起改。</li>
+<li><strong>C 區</strong>是「刪之前知道要去問誰」：例如疑似 A&#x2F;B 實驗遺留的替代方案頁（要查 feature flag 平台上實驗結束了沒）、付款完成頁（要查金流的 return URL 設定）、內部調校工具頁（要問還在不在用）。</li>
+</ul>
+<p>這個分區框架本身就經歷過一次修正：初版文件把 A 區寫成「高信心可移除」，只有 C 區標示需確認——這是錯的。修正後的前提是 <strong>A &#x2F; B &#x2F; C 一律要人工確認才可刪</strong>，分區只代表確認成本的高低，不代表可以跳過確認。</p>
+<h3 id="Step-2：讓-AI-模擬真實使用者訪問"><a href="#Step-2：讓-AI-模擬真實使用者訪問" class="headerlink" title="Step 2：讓 AI 模擬真實使用者訪問"></a>Step 2：讓 AI 模擬真實使用者訪問</h3><p>用 browser automation（agent browser 或 Playwright）分別以<strong>已登入</strong>與<strong>未登入</strong>兩種狀態實際走訪這些 route，記錄實際行為（200 &#x2F; 404 &#x2F; redirect &#x2F; 白畫面），回寫到盤點文件。</p>
+<p>這一步的價值：把「這條 route 現在還通不通」變成有憑有據的紀錄，而不是憑印象猜測。後面會看到，光這一步就推翻了盤點文件裡的好幾個結論。</p>
+<h3 id="Step-3：每條-route-的刪除-gate"><a href="#Step-3：每條-route-的刪除-gate" class="headerlink" title="Step 3：每條 route 的刪除 gate"></a>Step 3：每條 route 的刪除 gate</h3><p>不分 A &#x2F; B &#x2F; C，每一條刪除前都走完這四步：</p>
 <ol>
-<li><strong>Document phase</strong>：開了 17 個 agent，分批讀 code、各自負責一段 endpoint 的文件撰寫。</li>
-<li><strong>Verify phase</strong>：另開 16 個 agent，每個負責驗證一部分產出。</li>
+<li>重新 <code>rg</code> 站內引用（含 template literal、選單定義、<code>next.config.js</code> redirects）——<strong>不要信任幾天前的盤點結果</strong>。</li>
+<li>人工確認站外／第三方進入點：金流 return URL、廣告後台、合作夥伴嵌入、email 樣板、SEO 索引。這一步靜態掃描做不到。</li>
+<li>系統負責人簽核。</li>
+<li>刪除後跑 typecheck &#x2F; lint &#x2F; test &#x2F; build，並實測主要流程。</li>
 </ol>
-<p><img src="/img/ultracode/ultracode-workflow-document-phase.png" srcset="/img/loading.gif" lazyload alt="Document phase：17 個 agent 並行撰寫文件"></p>
-<p>有趣的是驗證的設計。每個驗證不是「看一遍沒問題就過」，而是對抗性的跑法：再啟動 <strong>3 個小 agent 專門嘗試推翻</strong>這個產出，至少 2 個得出「無法推翻」才算通過。從執行輸出來看，行為跟這個模式一致；不過老實說，UI 計數器只顯示頂層的 33 個 agent，懷疑者是否另計、實際總數多少，我沒能從介面確認。</p>
-<p>這套 adversarial verify 在<a target="_blank" rel="noopener" href="https://code.claude.com/docs/en/workflows">官方文件</a>裡只有概念性描述：獨立 agent 交叉驗證彼此的發現、對每個 claim 投票淘汰。「懷疑者專門嘗試推翻、多數決存活」的具體框架，出自 azukiazusa 對內建 <code>/deep-research</code> 的實作解析（見文末參考資料）——每個 claim 由 3 個獨立懷疑者投票、2&#x2F;3 決：</p>
-<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs js"><span class="hljs-comment">// Adversarial verify: spawn N independent skeptics per finding, each prompted</span><br><span class="hljs-comment">// to REFUTE. Kill if ≥majority refute. Prevents plausible-but-wrong findings</span><br><span class="hljs-comment">// from surviving.</span><br><span class="hljs-keyword">const</span> votes = <span class="hljs-keyword">await</span> <span class="hljs-title function_">parallel</span>(<span class="hljs-title class_">Array</span>.<span class="hljs-title function_">from</span>(&#123;<span class="hljs-attr">length</span>: <span class="hljs-number">3</span>&#125;, <span class="hljs-function">() =&gt;</span> <span class="hljs-function">() =&gt;</span><br>  <span class="hljs-title function_">agent</span>(<span class="hljs-string">`Try to refute: <span class="hljs-subst">$&#123;claim&#125;</span>. Default to refuted=true if uncertain.`</span>, &#123;<span class="hljs-attr">schema</span>: <span class="hljs-variable constant_">VERDICT</span>&#125;)))<br><span class="hljs-keyword">const</span> survives = votes.<span class="hljs-title function_">filter</span>(<span class="hljs-title class_">Boolean</span>).<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">v</span> =&gt;</span> !v.<span class="hljs-property">refuted</span>).<span class="hljs-property">length</span> &gt;= <span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
-
-<blockquote>
-<p>註：這段是 azukiazusa 原始碼的簡化改寫。另外留意官方在 v2.1.196 修正了 runtime 層的錯誤處理：驗證 agent 因 rate limit 或 API 錯誤而「無法檢查」的 claim，會列為 unverified、不算作 refuted——這跟範例 prompt 裡「不確定時預設算推翻」的判準是不同層次的事，照抄設計前請分清楚。</p>
-</blockquote>
-<p>「預設懷疑、多數決存活」的設計，跟我之前做大規模 dead code 清理時手動安排三個獨立驗證 agent 的思路一致——差別是 ultracode 把它變成內建機制。</p>
-<p><img src="/img/ultracode/ultracode-workflow-verify-phase.png" srcset="/img/loading.gif" lazyload alt="Verify phase：16 個 agent 對抗性驗證"></p>
-<h2 id="代價與品質：27-額度買到-8-10-的品質"><a href="#代價與品質：27-額度買到-8-10-的品質" class="headerlink" title="代價與品質：27% 額度買到 8&#x2F;10 的品質"></a>代價與品質：27% 額度買到 8&#x2F;10 的品質</h2><p>這一切不是免費的：</p>
+<h3 id="Step-4：清理要連根拔"><a href="#Step-4：清理要連根拔" class="headerlink" title="Step 4：清理要連根拔"></a>Step 4：清理要連根拔</h3><p>刪一條 route 從來不是只刪一個 page 檔。連動範圍包括：對應的 component 目錄、只服務這頁的 scss（含散在 responsive 檔裡的 media-query 區塊）、指向這條 route 的按鈕與 <code>router.push</code>、引用這條 route 的 e2e helper 與測試、以及<strong>內容已經說謊的註解</strong>（例如寫著「成功後導向某頁」但實際流程早就不走那裡）。</p>
+<h2 id="實戰：盤點結論被推翻的四個案例"><a href="#實戰：盤點結論被推翻的四個案例" class="headerlink" title="實戰：盤點結論被推翻的四個案例"></a>實戰：盤點結論被推翻的四個案例</h2><p>這次最大的收穫不是刪了幾條 route，而是見識到「看起來很確定的盤點結論」可以錯得多徹底。四個真實案例：</p>
+<h3 id="案例-1：「站內零引用」是錯的——component-被別頁共用"><a href="#案例-1：「站內零引用」是錯的——component-被別頁共用" class="headerlink" title="案例 1：「站內零引用」是錯的——component 被別頁共用"></a>案例 1：「站內零引用」是錯的——component 被別頁共用</h3><p>盤點文件標記某三個 dashboard 頁面「連同 component 目錄整組可刪」。刪除前重新 grep 才發現：其中幾個 component（表格、篩選器）<strong>被另一個活著的頁面 import</strong>。正確做法是只刪 route 和入口檔，把共用 component 搬到活頁面的目錄下，連同測試一起搬——<strong>測試是要搬走，不是刪除</strong>。</p>
+<p>教訓：盤點是某個時間點的快照，gate 的第一步「刪除前重新 grep」不是儀式，是真的會抓到東西。</p>
+<h3 id="案例-2：「有引用」也可能是死的——打不開的-modal"><a href="#案例-2：「有引用」也可能是死的——打不開的-modal" class="headerlink" title="案例 2：「有引用」也可能是死的——打不開的 modal"></a>案例 2：「有引用」也可能是死的——打不開的 modal</h3><p>一條付款完成頁（thank-you page），盤點寫「站內零連結」。錯——某個結帳表單裡明明有指向它的 <code>router.push</code>，而且這個表單被兩個保留頁面使用。乍看是活的。</p>
+<p>繼續追下去：那個表單被包在 <code>&lt;Modal show=&#123;show&#125;&gt;</code> 裡，而 <code>show</code> 的初始值是 <code>false</code>，<strong>全 repo 沒有任何一處呼叫 <code>setShow(true)</code></strong>。modal 永遠打不開，那個 <code>router.push</code> 永遠到不了。線上真正的付款流程走的是另一條路，從不經過這頁。</p>
+<p>但還沒完——這頁上有轉換追蹤事件，「刪掉會不會掉轉換數據」？逐一查購買追蹤事件的三個呼叫點：</p>
+<table>
+<thead>
+<tr>
+<th>呼叫點</th>
+<th>是否在線上路徑</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>現行付款頁的表單</td>
+<td>是——redirect 前就發送</td>
+</tr>
+<tr>
+<td>打不開的 modal 裡</td>
+<td>否</td>
+</tr>
+<tr>
+<td>thank-you 頁本身</td>
+<td>否——頁面到不了</td>
+</tr>
+</tbody></table>
+<p>去重機制（query param + localStorage guard）的設計是「誰先到誰發、只發一次」，而線上流程由現行付款頁在 redirect 前就發掉了。結論：刪除不會掉轉換追蹤。<strong>這種等級的查證，就是 route 清理和 dead code 清理在成本上的差距。</strong></p>
+<p>順帶的紀律：查證過程挖出「兩個保留頁面裡整組打不開的付款 modal」這個更大的 dead code，但<strong>另開票處理，不混進路由清理</strong>——scope 一混，review 和 revert 都會變難。</p>
+<h3 id="案例-3：「點下去會-404」實測是跳轉——middleware-在中間接住了"><a href="#案例-3：「點下去會-404」實測是跳轉——middleware-在中間接住了" class="headerlink" title="案例 3：「點下去會 404」實測是跳轉——middleware 在中間接住了"></a>案例 3：「點下去會 404」實測是跳轉——middleware 在中間接住了</h3><p>盤點列出五條「指向不存在 route 的連結，點下去會 404」。用 Playwright 在登入／未登入兩種狀態實測後改寫：其中三條被 middleware（proxy 層）攔下來 redirect，使用者看到的是跳轉不是 404；只有兩條是真 404。嚴重度重評，處理的優先序也跟著變。</p>
+<p>實測還順帶挖出一段 middleware 裡的死程式碼：某個分支永遠被前面的條件先攔掉，唯一能走到它的角色會被導向一條<strong>根本不存在的 route</strong>。靜態盤點看不出來，實際走一遍就現形。</p>
+<p>教訓：<strong>route 的實際行為由整條 request 鏈決定</strong>（middleware、redirects、proxy），只看 page 檔和連結會誤判。這也是 Step 2「模擬真實使用者訪問」必須做的原因。</p>
+<h3 id="案例-4：站內零連結是刻意的——這頁的讀者不是站內使用者"><a href="#案例-4：站內零連結是刻意的——這頁的讀者不是站內使用者" class="headerlink" title="案例 4：站內零連結是刻意的——這頁的讀者不是站內使用者"></a>案例 4：站內零連結是刻意的——這頁的讀者不是站內使用者</h3><p>一條表單頁，站內零連結、零引用，形態上完美符合「可刪」。跟負責人確認後才知道：這是給<strong>第三方審核方</strong>看的頁面，檔頭註解寫明「intentionally front-end only」。站內零連結是設計，不是遺留。</p>
+<p>處理方式不只是「不刪」，而是把它移進 D 區「確認保留」，寫明保留原因——<strong>否則下一次盤點它又會被列為可刪候選</strong>，同樣的確認成本會一再重付。清理文件的價值有一半在「刪了什麼」，另一半在「查過了、確認要留、為什麼」。</p>
+<h2 id="驗證分層"><a href="#驗證分層" class="headerlink" title="驗證分層"></a>驗證分層</h2><p>由 AI 到人逐步收斂，一層都不跳：</p>
+<ol>
+<li><strong>多 subagent 交叉檢查</strong>：開 2～3 個獨立 subagent 檢查清理內容——立場是「找出刪錯的地方」，不是順著刪除者的思路看一遍。</li>
+<li><strong>既有系統測試</strong>：typecheck、lint、test、build 全過。</li>
+<li><strong>Smoke test + 人工走訪</strong>：實際打開網站逐頁瀏覽，確認核心流程與版面。AI 可以先走一遍並截圖，人再抽查。</li>
+<li><strong>Code review</strong>：人工檢視所有變更，最後把關。</li>
+</ol>
+<p>另外兩個 route 特有的驗證細節：</p>
 <ul>
-<li>這個任務總共消耗了我 <strong>Premium seat 額度的 27%</strong>（指 <code>/usage</code> 裡 5 小時滾動窗口的額度）。數字是任務前後對照 <code>/usage</code> 用量畫面得出的，沒有精確的 token 數。依<a target="_blank" rel="noopener" href="https://claude.com/pricing">官方定價頁</a>，Premium seat 的用量是 Standard seat 的 <strong>5 倍</strong>。假設額度按同一倍率換算，27% × 5 ≈ <strong>1.35 個 Standard seat 的同期額度</strong>——一個 API 文件補寫任務，就吃掉超過一整個 Standard seat。</li>
-<li>消耗大的原因之一：workflow 的 subagent 預設繼承 parent agent 的 model，所以 33 個 agent 全部是用最高階的 model 在跑。要注意這只是預設值、不是建議——官方文件的 Cost 章節反而建議對不需要最強模型的 stage 指定較小的 model。換句話說，這次的成本有一部分是我沒做 model 分層優化的結果。</li>
-<li>而且這只是一個複雜度不高的文件任務。如果是需要大量驗證的大型重構，token 只會更多。</li>
+<li><strong>redirect 要保留</strong>：站內連結改掉、page 檔刪掉之後，<code>next.config.js</code> 層的 permanent redirect 留著——外部既有連結和 SEO 還靠它。</li>
+<li><strong>同名不同物要小心</strong>：route 的路徑名稱可能跟後端 API endpoint 撞名——刪 route 時 grep 到的 API 常數完全是另一個東西，不能動。</li>
 </ul>
-<p>那這些 token 買到了什麼品質？我給 <strong>8&#x2F;10</strong>：大部分 endpoint 補寫得正確可用，但仍有一些小錯誤——而且是連內建對抗性驗證都沒攔下來的那種。也就是說，驗證機制能把品質拉高，但不等於零錯誤，產出仍需要其他測試（或人工抽查）守門。</p>
-<h2 id="週邊機制的觀察：recap-讚，insight-雞肋"><a href="#週邊機制的觀察：recap-讚，insight-雞肋" class="headerlink" title="週邊機制的觀察：recap 讚，insight 雞肋"></a>週邊機制的觀察：recap 讚，insight 雞肋</h2><p>測試過程中還觀察到兩個輸出機制：recap 和 insight。它們跟 ultracode 本身沒有直接關係——但在多 agent 同時跑的情境下，體感差異被放得特別大：</p>
-<p><strong>recap（好用）</strong>：每個段落完成後，視窗下方會小結目前的工作狀態，例如：</p>
-<blockquote>
-<p>※ recap: API 文件同步任務已完成：補了約 64 個缺漏 endpoint、修了 2 個過時條目，並開了 PR。下一步是等你決定要盯 CI，還是開工 follow-up issue（格式統一）。</p>
-</blockquote>
-<p>多個 agent 同時在跑的時候，很容易忘記誰在做什麼、做到哪——recap 直接解決這個問題。</p>
-<p><strong>insight（常常多餘）</strong>：這是我對另一種行為的自稱，官方文件查不到這個名字——它會在回覆中插入「我為什麼這樣做」的說明區塊，例如解釋它刻意用 <code>gh issue create</code> 而不是會順便切 branch 的 skill，避免把我從目前的 PR branch 切走。判斷本身是對的，但這類內容常跟既有回覆重複，變成雜訊。</p>
-<h2 id="實驗的意外發現：Agent-View"><a href="#實驗的意外發現：Agent-View" class="headerlink" title="實驗的意外發現：Agent View"></a>實驗的意外發現：Agent View</h2><p>為了掌握多個 agent 的狀態，我順帶發現了 Claude 提供的 Agent View（<code>claude agents</code>）：集中管理 session 的介面，一個畫面看到各 session 的狀態（幾個在跑、幾個等輸入、幾個完成），直觀好上手。</p>
-<p>不過要注意它的顆粒度是 <strong>session 層級</strong>：ultracode workflow 展開的那幾十個 subagent 並不會逐一顯示在 Agent View 裡，你看到的只是「跑這個 workflow 的那一個 session」；subagent 的進度得回到該 session 的 workflow 進度畫面才看得到。</p>
-<p><img src="/img/ultracode/ultracode-agent-view.png" srcset="/img/loading.gif" lazyload alt="Agent View：session 層級的集中管理介面"></p>
-<p>真正的落差，要拿它對照我原本的工作流才看得出來。我的多 session 工作流是「<strong>中控台模式</strong>」——這是我自己設計的 AI 協作方式，不是 Claude 官方的 agent teams 功能：一個主 session 當指揮中心，其他 agent 的產出回到中控台，由它幫我總結、甚至代替我回覆其他 agent。Agent View 能「看」到所有 session 的狀態，但無法像中控台一樣<strong>總結所有 task 的內容</strong>，要代替回覆也得用特殊方式才做得到。它是個好介面，但還不足以取代中控台。</p>
-<h2 id="結論：ultracode-workflow-可以用，但產出要驗收"><a href="#結論：ultracode-workflow-可以用，但產出要驗收" class="headerlink" title="結論：ultracode workflow 可以用，但產出要驗收"></a>結論：ultracode workflow 可以用，但產出要驗收</h2><p>回到標題的問題，我的答案是：</p>
-<ul>
-<li><strong>ultracode workflow 可以拿來做某些複雜任務</strong>——邊界清楚、可平行拆分、需要驗證品質的批次工作（文件補寫、大規模清理、審查類），前提是你願意為它付 token。但產出不能免驗收：這次 8&#x2F;10 的品質仍有小錯誤混過了內建驗證，<strong>它的產出應該當作「高品質的草稿」，再用其他測試做最後的守門</strong>。</li>
-<li><strong>Agent View 是好介面，但取代不了中控台模式</strong>——需要跨任務統籌、頻繁人工介入決策的日常開發，主力還是我原本的工作流。</li>
-<li>所以兩者跟既有工作流是<strong>搭配關係，不是取代關係</strong>。</li>
+<h2 id="給清理人員的提醒"><a href="#給清理人員的提醒" class="headerlink" title="給清理人員的提醒"></a>給清理人員的提醒</h2><ul>
+<li><strong>route ≠ dead code</strong>：第三方服務、子網域、return URL、廣告後台、email 樣板、SEO——外部進入點一個都不能漏想。</li>
+<li><strong>分區代表確認成本，不代表可刪</strong>：站內零引用只證明站內沒人用。每一條都要過 gate。</li>
+<li><strong>刪除前重新 grep</strong>：盤點是快照，會過期，也會錯。這次 14 條 A 區就修正了 4 條。</li>
+<li><strong>有引用不代表活著，零引用不代表死了</strong>：案例 2 和案例 4 是同一枚硬幣的兩面——判斷的終點永遠是「實際的執行路徑」和「系統負責人的脈絡」。</li>
+<li><strong>實測行為，不要推論行為</strong>：middleware 和 redirect 鏈會讓靜態推論失真，登入／未登入各走一遍。</li>
+<li><strong>記錄「確認保留」跟記錄刪除一樣重要</strong>：不寫下來，下次盤點會重付一次確認成本。</li>
+<li><strong>順帶挖出的 dead code 另開票</strong>：route 清理的 scope 就是 route，別讓 PR 長成怪物。</li>
+<li><strong>AI 做搜集與舉證，人做判斷</strong>：需要系統熟悉度的決策不要外包給 AI。</li>
 </ul>
-<p>比起功能本身的評測，這次測試最大的收穫是<strong>偷學了它的驗證設計</strong>。「每個產出啟動獨立的懷疑者 agent 嘗試推翻、多數決存活」——至少從這次的執行輸出看，它的驗證是照這個模式跑的——這個做法不需要 ultracode 也能用：後續我在開發較複雜的功能時，也會另外啟動三個 agent 評估產出，用同樣的對抗性思路把關品質。</p>
-<p>這也是拿邊緣任務試新工具的另一層價值：就算工具最後沒有進入你的日常工作流，它的設計思維也可能留下來，變成你自己流程的一部分。</p>
-<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><ul>
-<li><a target="_blank" rel="noopener" href="https://code.claude.com/docs/en/workflows">Claude Code 官方文件 — Workflows</a></li>
-<li><a target="_blank" rel="noopener" href="https://claude-world.com/articles/what-is-a-workflow-multi-agent-orchestration/">What Is a Workflow? Claude Code’s Multi-Agent Orchestration, Explained</a> — workflow 的設計理念與 quality patterns（含 adversarial verify）</li>
-<li><a target="_blank" rel="noopener" href="https://azukiazusa.dev/en/blog/claude-code-dynamic-workflow/">Trying Dynamic Workflow in Claude Code</a> — <code>/deep-research</code> 與自訂 workflow 的實測，含 3 票對抗性驗證與 <code>agent()</code> &#x2F; <code>parallel()</code> &#x2F; <code>pipeline()</code> API 範例</li>
-<li><a target="_blank" rel="noopener" href="https://claude.com/pricing">Claude 官方定價頁</a> — Standard &#x2F; Premium seat 用量倍率依據</li>
+<h2 id="成果總結"><a href="#成果總結" class="headerlink" title="成果總結"></a>成果總結</h2><ul>
+<li>盤點 70 條 page route，本波刪除 16 條（含連動 component、scss、e2e helper 改寫），其餘逐條標注狀態：待確認、已知要問誰，或確認保留並記錄原因。</li>
+<li>這次共變更 88 個檔案，程式碼減少 4,086 行。</li>
+<li>將整理過程及方法，整理成一個文件紀錄，作為下一輪清理的起點，以及交接。</li>
+<li>順帶修掉真實的行為問題：付款錯誤畫面上一顆把使用者導向白畫面的按鈕。</li>
+<li>使用者可見行為與轉換追蹤零中斷。</li>
 </ul>
+<p>如果說上一次 dead code 清理的心法是「<strong>工具給候選、grep 給證據、不懂脈絡的區域不要碰</strong>」，那 route 清理要在前面再加一句：**站內的證據永遠只是半份證據——另一半在系統外面，在熟悉系統的人腦子裡。**這就是為什麼刪一條 route，比刪一萬行 dead code 更難。</p>
 
                 
               </div>
@@ -516,15 +590,15 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Claude-Code/" class="print-no-link">#Claude Code</a>
-      
         <a href="/tags/AI-Agent/" class="print-no-link">#AI Agent</a>
       
-        <a href="/tags/Multi-Agent/" class="print-no-link">#Multi-Agent</a>
-      
-        <a href="/tags/Workflow/" class="print-no-link">#Workflow</a>
-      
         <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+        <a href="/tags/Dead-Code/" class="print-no-link">#Dead Code</a>
+      
+        <a href="/tags/%E9%87%8D%E6%A7%8B/" class="print-no-link">#重構</a>
+      
+        <a href="/tags/Next-js/" class="print-no-link">#Next.js</a>
       
     </div>
   
@@ -536,8 +610,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？</div>
-      <div>https://jh0712.github.io/2026/07/31/claude-code-ultracode-workflow-review/</div>
+      <div>Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難</div>
+      <div>https://jh0712.github.io/2026/08/16/route-cleanup-in-practice/</div>
     </div>
     <div class="license-meta">
       
@@ -549,7 +623,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>發布於</div>
-          <div>2026年7月31日</div>
+          <div>2026年8月16日</div>
         </div>
       
       
@@ -581,18 +655,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2026/08/16/route-cleanup-in-practice/" title="Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Route 清理實戰：刪一條 Route 比刪一萬行 Dead Code 更難</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">
-                        <span class="hidden-mobile">Dead Code 清理實戰：如何安全刪除一萬四千行程式碼</span>
+                      <a href="/2026/07/31/claude-code-ultracode-workflow-review/" title="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？">
+                        <span class="hidden-mobile">Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
