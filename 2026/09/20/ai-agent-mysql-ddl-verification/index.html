@@ -1,0 +1,949 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="「大表加欄位會鎖表」這種問題，真要驗證是很痛的：要準備 100 萬筆資料、要跑十幾個情境、其中好幾個單一 ALTER 就跑一兩個小時，而且你得全程盯著寫入有沒有被擋。光是最後報告裡那幾個大 ALTER 的實測時間加起來就超過 4.5 小時，還不含灌資料。這種「大量等待 + 機械操作 + 但需要判斷」的任務，正好是 AI agent 最划算的應用場景。這篇不談 MySQL 的結論（那在 另一篇），">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告">
+<meta property="og:url" content="https://jh0712.github.io/2026/09/20/ai-agent-mysql-ddl-verification/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="「大表加欄位會鎖表」這種問題，真要驗證是很痛的：要準備 100 萬筆資料、要跑十幾個情境、其中好幾個單一 ALTER 就跑一兩個小時，而且你得全程盯著寫入有沒有被擋。光是最後報告裡那幾個大 ALTER 的實測時間加起來就超過 4.5 小時，還不含灌資料。這種「大量等待 + 機械操作 + 但需要判斷」的任務，正好是 AI agent 最划算的應用場景。這篇不談 MySQL 的結論（那在 另一篇），">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-20T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-20T12:01:13.844Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="DDL">
+<meta property="article:tag" content="Prompt">
+<meta property="article:tag" content="工程實踐">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告 - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-20 14:00" pubdate>
+          2026年9月20日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          47 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>「大表加欄位會鎖表」這種問題，真要驗證是很痛的：要準備 100 萬筆資料、要跑十幾個情境、其中好幾個單一 ALTER 就跑一兩個小時，而且你得全程盯著寫入有沒有被擋。光是最後報告裡那幾個大 ALTER 的實測時間加起來就超過 4.5 小時，還不含灌資料。這種「大量等待 + 機械操作 + 但需要判斷」的任務，正好是 AI agent 最划算的應用場景。這篇不談 MySQL 的結論（那在 <a href="/2026/09/20/mysql-large-table-ddl-lock-benchmark/" title="MySQL 大表 DDL 實測：哪些操作會鎖表、哪些會讓你等一小時">另一篇</a>），只談方法：<strong>怎麼寫 prompt、怎麼讓它的結論可被驗證、以及哪些部分不能交給它。</strong></p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="這類任務為什麼適合丟給-agent"><a href="#這類任務為什麼適合丟給-agent" class="headerlink" title="這類任務為什麼適合丟給 agent"></a>這類任務為什麼適合丟給 agent</h2><h3 id="先說清楚：這不是「問-AI-要答案」"><a href="#先說清楚：這不是「問-AI-要答案」" class="headerlink" title="先說清楚：這不是「問 AI 要答案」"></a>先說清楚：這不是「問 AI 要答案」</h3><p>「大表加欄位會不會鎖表」這種問題，現在直接問 AI 幾秒鐘就有答案，而且方向通常是對的。但它給的是 MySQL 手冊層級的通用結論——<strong>你那張表實際會怎樣，取決於它有沒有 FULLTEXT、INSTANT 額度剩幾次、是哪個小版本、過去被改過什麼</strong>。尤其是從舊版本一路升上來的 production 表，殘留狀態不會寫在任何文件裡，AI 也無從知道。</p>
+<p>所以這次的用法是反過來的：<strong>不是問 AI 要結論，而是讓 AI 去跑實驗、把我們這套系統的實際規則量出來。</strong> AI 負責執行和舉證，結論由數據決定。</p>
+<h3 id="四個判準"><a href="#四個判準" class="headerlink" title="四個判準"></a>四個判準</h3><p>我挑任務給 agent 跑的判準一直是這四個，DDL 驗證四個都滿分：</p>
+<ul>
+<li><strong>大量等待</strong>：單一情境動輒 1～2 小時，人不可能盯著。但 agent 可以一邊等一邊寫報告。</li>
+<li><strong>步驟機械、但需要臨場判斷</strong>：看 processlist、算耗時、決定某個跑太久的 ALTER 要不要 KILL——這些用腳本寫死很麻煩，但對 agent 很自然。</li>
+<li><strong>驗證成本低</strong>：每個結論都是一段 SQL，我要抽查只要複製貼上重跑一次。這是關鍵——<strong>AI 產出的價值不在於它說了什麼，而在於它的說法能不能被便宜地驗證。</strong></li>
+<li><strong>風險可控</strong>：整輪都在 local docker 的複製表上，錯了 <code>DROP TABLE</code> 重來。</li>
+</ul>
+<p>反過來說，如果一個任務的結論<strong>無法用一行指令驗證</strong>，把它丟給 agent 通常是在替自己製造工作。</p>
+<h2 id="Prompt-的六個區塊"><a href="#Prompt-的六個區塊" class="headerlink" title="Prompt 的六個區塊"></a>Prompt 的六個區塊</h2><p>這次用的 prompt 不長，但每一段都在解決一個特定的失敗模式。完整原文在文末附錄，這裡拆開講為什麼要那樣寫。</p>
+<h3 id="1-先圈出技術邊界"><a href="#1-先圈出技術邊界" class="headerlink" title="1. 先圈出技術邊界"></a>1. 先圈出技術邊界</h3><blockquote>
+<p>我目前 backend 有 mysql docker，此次測試使用純 sql 語法進行測試，不要用到 laravel 的 Item eloquent model 避免觸發相關排程。</p>
+</blockquote>
+<p>不講清楚的話，agent 看到一個 Laravel 專案會很自然地用 Eloquent 和 factory 來灌資料——而這張表是 <code>items</code>，碰到 model 就可能觸發 queue 排程。<strong>「不要用什麼」跟「要用什麼」一樣重要</strong>，尤其是那種「執行起來不會報錯，但會在別的地方出事」的做法。</p>
+<h3 id="2-給前因，讓它知道你在追什麼"><a href="#2-給前因，讓它知道你在追什麼" class="headerlink" title="2. 給前因，讓它知道你在追什麼"></a>2. 給前因，讓它知道你在追什麼</h3><blockquote>
+<p>先前針對 items table create 新欄位會遇到 lock table 以及重建表的問題，有時候是 meta data lock，有時候是因為 fulltext index，有時候是新表建立外鍵的時候會鎖表 or 重建表。但是不清楚原因。每次都有相關事件記錄在專案 repo 中</p>
+</blockquote>
+<p>這段是整個 prompt 裡投報率最高的。它做了三件事：<strong>限縮搜尋範圍</strong>（往這三個方向查）、<strong>指出可用的證據來源</strong>（repo 裡有事件記錄，agent 會自己去翻 migration 檔和 commit）、<strong>說明目的不是「跑測試」而是「找出原因」</strong>。</p>
+<p>有前因的 prompt 和沒有的差別，是「它照著你列的清單做完」和「它會補你沒想到的情境」。</p>
+<h3 id="3-量化模糊詞"><a href="#3-量化模糊詞" class="headerlink" title="3. 量化模糊詞"></a>3. 量化模糊詞</h3><blockquote>
+<p>等很久的定義是大於兩分鐘（久）、五分鐘（很久）的程度</p>
+</blockquote>
+<p>「很久」「很慢」「太大」這種詞如果不定義，你會拿到一份用形容詞寫的報告，沒辦法拿去做決策。定義成兩個閾值之後，最後那張速查表每一列才有可比較的分級。</p>
+<p><strong>凡是最後會出現在結論裡的形容詞，都要在 prompt 裡給定義。</strong></p>
+<h3 id="4-把「已知」寫出來，但明說不可直接相信"><a href="#4-把「已知」寫出來，但明說不可直接相信" class="headerlink" title="4. 把「已知」寫出來，但明說不可直接相信"></a>4. 把「已知」寫出來，但明說不可直接相信</h3><blockquote>
+<p>目前已知（這些不可直接相信，需要先做測試）</p>
+<ol>
+<li>table 中如果有 fulltext index, 建立新欄位會重建表</li>
+<li>metadata change 超過 64 次，會需要重建表</li>
+<li>有其他資料在寫入的時候，會需要等待</li>
+<li>新的欄位如果有指定位置，會重建表</li>
+</ol>
+</blockquote>
+<p>這是整段 prompt 裡我最想推薦的一招。</p>
+<p>只給「已知」不加但書，agent 會把它當前提，然後去找支持的證據——你會拿到一份四條全部「✅ 確認成立」的報告，非常好看，但沒有價值。加上「不可直接相信」之後，這四條變成<strong>待驗證的假設</strong>，每一條都要有實測數據支撐。</p>
+<p>結果是四條裡有一條（指定位置會重建表）被推翻了——那是 MySQL 8.0.28 以前的行為，我們的 8.0.46 早就不適用。如果沒加這句，這條過時知識會繼續被當成前提沿用，而且這次還會多一份 AI 報告幫它背書。</p>
+<p><strong>列出你以為你知道的事，然後要求 agent 試著推翻它。</strong></p>
+<h3 id="5-要求重現步驟，而不是只要結論"><a href="#5-要求重現步驟，而不是只要結論" class="headerlink" title="5. 要求重現步驟，而不是只要結論"></a>5. 要求重現步驟，而不是只要結論</h3><blockquote>
+<p>不同的情境：測試需要說明如何重現以及說明過程</p>
+</blockquote>
+<p>這句話把產出從「一份要你選擇相信的報告」變成「一份可以抽查的報告」。最後每個情境都附了可以直接貼進 mysql client 的 SQL、實際的錯誤訊息、processlist 的狀態——我抽驗其中幾個只花了幾分鐘。</p>
+<h3 id="6-講出真正的目的"><a href="#6-講出真正的目的" class="headerlink" title="6. 講出真正的目的"></a>6. 講出真正的目的</h3><blockquote>
+<p>主要目的：在後續對大表操作的時候，可以有一個警惕，避免 laravel migration 對表做操作的時候，過久等待的情況。</p>
+</blockquote>
+<p>有這段，agent 知道要產出的是「migration 前的判斷依據」，所以最後主動把結論收斂成八條 Laravel migration 建議，而不是停在一堆 MySQL 行為的描述。<strong>說明用途，產出的形狀就會對。</strong></p>
+<p>另外我也留了一句開放的：「測試需要補其他常見操作」「可以測試多種組合」——留白讓它補我沒想到的情境（DROP INDEX、合併多欄位 ALTER、drop FULLTEXT 之後的殘留效應都是這樣冒出來的）。</p>
+<h2 id="讓結論可信的三個機制"><a href="#讓結論可信的三個機制" class="headerlink" title="讓結論可信的三個機制"></a>讓結論可信的三個機制</h2><p>prompt 寫得好只能讓它跑對方向，要讓結論能拿去做決策，還要有下面這幾件事。</p>
+<h3 id="探針：不要問-agent「有沒有鎖表」，要它拿出證據"><a href="#探針：不要問-agent「有沒有鎖表」，要它拿出證據" class="headerlink" title="探針：不要問 agent「有沒有鎖表」，要它拿出證據"></a>探針：不要問 agent「有沒有鎖表」，要它拿出證據</h3><p>這是整輪測試最重要的設計。「這個 ALTER 有沒有擋寫入？」如果讓 agent 用 processlist 目測或用知識回答，你拿到的是它的推論，不是觀測。</p>
+<p>改成這樣：<strong>背景開一個迴圈，每 0.5 秒對測試表寫一筆，記錄每筆耗時；再開一個做點查 SELECT。</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-keyword">while</span> [ -f /tmp/probe_run ]; <span class="hljs-keyword">do</span><br>  S=$(<span class="hljs-built_in">date</span> +%s.%N)<br>  mysql ... -e <span class="hljs-string">&quot;INSERT INTO items_ddl_test (...) VALUES (...);&quot;</span><br>  E=$(<span class="hljs-built_in">date</span> +%s.%N)<br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;<span class="hljs-variable">$I</span> <span class="hljs-variable">$S</span> <span class="hljs-variable">$E</span> <span class="hljs-subst">$(耗時)</span>&quot;</span> &gt;&gt; <span class="hljs-variable">$LOG</span><br>  <span class="hljs-built_in">sleep</span> 0.5<br><span class="hljs-keyword">done</span><br></code></pre></td></tr></table></figure>
+
+<p>於是「加 FULLTEXT 會擋寫」這個結論的證據變成「<strong>寫入探針卡了 6,924.76 秒，讀取探針 13,556 筆全過、最慢 1.22 秒</strong>」。這是觀測值，不是推論；而且寫探針和讀探針分開，還意外釐清了「擋寫但不擋讀」這個關鍵區別。</p>
+<p>一般化的原則：<strong>凡是要判斷「會不會影響服務」的測試，都先設計一個持續打流量的探針，用探針的延遲當作證據。</strong></p>
+<h3 id="watchdog：給每個情境一個上限"><a href="#watchdog：給每個情境一個上限" class="headerlink" title="watchdog：給每個情境一個上限"></a>watchdog：給每個情境一個上限</h3><p>有些操作是真的跑不完的（型別變更那個跑到 12 分鐘還停在 <code>copy to tmp table</code>）。事先約定好「超過 N 分鐘就 KILL 並記錄為 <code>&gt;Ns（被砍）</code>」，agent 就不會卡在那裡空等，報告裡也能誠實標示這是下限而不是實測值。</p>
+<p>這裡也有個需要人先確認的安全問題：<strong>KILL 一個進行中的 <code>ALTER ... COPY</code> 是安全的</strong>（只是丟棄 tmp table），但 KILL 一個大的 DML 交易完全不是——實測 rollback 花了 30 分鐘以上，而且期間鎖照樣持有。這種「哪些動作可以放心讓 agent 自己做」的界線，要在放它跑之前想清楚。</p>
+<h3 id="環境隔離與參數記錄"><a href="#環境隔離與參數記錄" class="headerlink" title="環境隔離與參數記錄"></a>環境隔離與參數記錄</h3><p>測試期間要停掉 queue worker 和 scheduler，不然 IO 干擾會讓數字失真。調過的 MySQL 參數（buffer pool、redo log、flush 策略）也要全部記進報告——這些會大幅影響絕對耗時，讀報告的人必須知道。</p>
+<p>實務上我會要求：<strong>所有調參都用 <code>SET GLOBAL</code> 動態設定，不要改 my.cnf</strong>，這樣 <code>docker compose restart db</code> 就能全部還原，不會留下污染後續開發的環境。</p>
+<h2 id="長任務的工程問題"><a href="#長任務的工程問題" class="headerlink" title="長任務的工程問題"></a>長任務的工程問題</h2><p>這類任務有一個 coding agent 日常任務不會遇到的問題：<strong>單一指令跑一小時以上</strong>。</p>
+<ul>
+<li><strong>session 中斷風險</strong>：跑 1 小時 55 分的 ALTER，中間 agent session 掉線或被中斷，整個情境就白跑。長指令要放在 tmux&#x2F;nohup 裡跑並導出到 log 檔，agent 只負責輪詢 log，而不是自己 hold 住那個前景行程。</li>
+<li><strong>邊跑邊寫</strong>：要求它每完成一個情境就把結果寫進報告檔，而不是全部跑完再一次產出。中途出事至少還留著前面的數據。</li>
+<li><strong>耗時本身就是數據</strong>：所有指令都要記開始&#x2F;結束時間戳，不要只留「完成了」。</li>
+</ul>
+<h2 id="意外收穫多半來自「路上發現」"><a href="#意外收穫多半來自「路上發現」" class="headerlink" title="意外收穫多半來自「路上發現」"></a>意外收穫多半來自「路上發現」</h2><p>最後報告裡有個附錄，記了三件不在測試計畫內的事：KILL 大交易的 rollback 代價、secondary index 對灌資料的放大效應、外接碟的 fsync 延遲才是真瓶頸。</p>
+<p>這三件事都是<strong>灌測試資料的時候撞到的</strong>——原本只是準備工作，結果自己成了結論。其中 redo log 那個（預設 100MB 時 insert 掉到 70 筆&#x2F;秒，調到 4GB 後 1,500 筆&#x2F;秒）對日常開發的影響，甚至比某些正式測試項目還大。</p>
+<p>所以我現在會固定加一句要求：<strong>把過程中遇到的異常、繞路、和「原本以為是雜訊結果不是」的東西也記下來。</strong> 準備階段的意外，資訊量常常比計畫內的測項高，因為那是你完全沒預期的部分。</p>
+<h2 id="哪些部分不能交給-agent"><a href="#哪些部分不能交給-agent" class="headerlink" title="哪些部分不能交給 agent"></a>哪些部分不能交給 agent</h2><p>這輪下來，有三件事是我 review 時才處理、agent 不會自己做對的：</p>
+<ol>
+<li><strong>判斷數字能不能外推。</strong> 這台機器跑在外接 USB SSD 上，fsync 延遲是內建 NVMe 的 20 倍，絕對耗時比正常環境難看得多。報告必須明講「可外推的是量級與鎖行為，不是絕對秒數」——這個界線是人劃的，agent 只會忠實報出它量到的數字。</li>
+<li><strong>決定要不要動 production。</strong> 報告裡有幾個延伸推論（例如「drop 過 FULLTEXT 的表可能已經拿不回 INSTANT」），那是需要在 staging 驗證後才能排程處理的事，不是報告寫了就去做。</li>
+<li><strong>決定要測什麼、不測什麼。</strong> 有個情境（加第二個 FULLTEXT）評估後跳過了：又是兩小時級，而且 production 已經不用 FULLTEXT，投報率太低。這種取捨要人來下。</li>
+</ol>
+<p>一句話總結分工：<strong>agent 負責舉證，人負責判決。</strong> 這跟我之前做大規模 dead code 清理時的結論是一樣的——AI 產出的不該是「答案」，而是「一份可以被驗證的證據」。</p>
+<h2 id="可以照抄的模板"><a href="#可以照抄的模板" class="headerlink" title="可以照抄的模板"></a>可以照抄的模板</h2><p>把上面六個區塊抽象出來，這類「驗證某個技術行為」的 prompt 大概長這樣：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs xml">環境與邊界：<br>  我有 <span class="hljs-tag">&lt;<span class="hljs-name">環境</span>&gt;</span>，這次用 <span class="hljs-tag">&lt;<span class="hljs-name">方法</span>&gt;</span> 測試，不要用 <span class="hljs-tag">&lt;<span class="hljs-name">會造成副作用的做法</span>&gt;</span>，原因是 <span class="hljs-tag">&lt;<span class="hljs-name">副作用</span>&gt;</span>。<br><br>前因：<br>  我們在 <span class="hljs-tag">&lt;<span class="hljs-name">情境</span>&gt;</span> 遇過 <span class="hljs-tag">&lt;<span class="hljs-name">問題</span>&gt;</span>，懷疑原因是 A / B / C，但不確定。<br>  相關記錄在 <span class="hljs-tag">&lt;<span class="hljs-name">可查證的地方</span>&gt;</span>。<br><br>期望結果：<br>  測出 <span class="hljs-tag">&lt;<span class="hljs-name">什麼情況下會發生什麼</span>&gt;</span>。<br>  <span class="hljs-tag">&lt;<span class="hljs-name">模糊詞</span>&gt;</span> 的定義是 <span class="hljs-tag">&lt;<span class="hljs-name">量化閾值</span>&gt;</span>。<br>  每個情境都要說明如何重現以及過程。<br><br>目前已知（這些不可直接相信，需要先做測試）：<br>  1. ...<br>  2. ...<br><br>主要目的：<br>  讓之後 <span class="hljs-tag">&lt;<span class="hljs-name">做某件事</span>&gt;</span> 的時候有判斷依據。<br><br>其他：<br>  可以補其他常見情境，可以測試多種組合。<br>  過程中遇到的異常也請記錄下來。<br></code></pre></td></tr></table></figure>
+
+<h2 id="附錄：這次使用的原始-prompt"><a href="#附錄：這次使用的原始-prompt" class="headerlink" title="附錄：這次使用的原始 prompt"></a>附錄：這次使用的原始 prompt</h2><blockquote>
+<p>以下保留當時的原始寫法（含錯字），僅表名與 model 名做了去識別化處理。</p>
+</blockquote>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">我目前 backend 有mysql docker，此次測試使用純 <span class="hljs-keyword">sql</span> 語法進行測試，不要用到 laravel 的 Item eloquent model 避免觸發相關排程。<br><br>幫我仿照 items 建立一個新的 <span class="hljs-keyword">table</span>, items_ddl_test<br><br>欄位, <span class="hljs-keyword">index</span> 都一樣<br><br>針對這個 items_ddl_test，先建立 <span class="hljs-number">100</span>萬筆資料，仿照 production 大量資料的情況<br><br>前因：<br>先前再針對 items <span class="hljs-keyword">table</span> <span class="hljs-keyword">create</span> 新欄位會有遇到 <span class="hljs-keyword">lock</span> <span class="hljs-keyword">table</span>以及重建表的問題，有時候是 meta data <span class="hljs-keyword">lock</span>, 有時候是因為 fulltext <span class="hljs-keyword">index</span>. 有時候會是 新表建立外鍵的時候會鎖表 <span class="hljs-keyword">or</span> 重建表。<br>但是不清楚原因。每次都有相關事件記錄在這個 repo 中<br><br>期望結果：<br>希望針對 mysql 資料量大的時候對表進行操作, 測試哪些狀況會鎖表或是需要等很久<br>等很久的定義是大於兩分鐘（久）, 五分鐘（很久）的程度<br>不同的情境：測試需要說明如何重現以及說明過程<br><br>目前已知（這些不可直接相信，需要先做測試）<br><span class="hljs-number">1.</span> <span class="hljs-keyword">table</span> 中如果有 fulltext <span class="hljs-keyword">index</span>, 建立新欄位會重建表，需要等待<br><span class="hljs-number">2.</span> metadata change 超過 <span class="hljs-number">64</span> 次，會需要重建表，需要等待<br><span class="hljs-number">3.</span> 有其他資料在寫入的時候，會需要等待其他資料寫完才做建立新欄位的動作<br><span class="hljs-number">4.</span> 新的欄位如果有指定位置，ex 在 description 後面，會重建表，需要等待<br><br>主要目的：<br>在後續對大表操作的時候，可以有一個警惕，避免larvel migration 對表做操作的時候，過久等待的情況。<br><br>測試需要補其他常見操作，確認資料操作是否會等很久<br><br>可以測試多種組合<br></code></pre></td></tr></table></figure>
+
+<hr>
+<p>這輪測試的完整結論（哪些 DDL 會鎖表、耗時多久、給 Laravel migration 的建議）寫在：<a href="/2026/09/20/mysql-large-table-ddl-lock-benchmark/" title="MySQL 大表 DDL 實測：哪些操作會鎖表、哪些會讓你等一小時">MySQL 大表 DDL 實測</a></p>
+<p>相關：<a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">Dead Code 清理實戰</a>、<a href="/2026/07/31/claude-code-ultracode-workflow-review/" title="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？">Claude Code ultracode workflow 實測心得</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/AI-Agent/" class="print-no-link">#AI Agent</a>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
+      
+        <a href="/tags/DDL/" class="print-no-link">#DDL</a>
+      
+        <a href="/tags/Prompt/" class="print-no-link">#Prompt</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告</div>
+      <div>https://jh0712.github.io/2026/09/20/ai-agent-mysql-ddl-verification/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年9月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/20/mysql-large-table-ddl-lock-benchmark/" title="MySQL 大表 DDL 實測：哪些操作會鎖表、哪些會讓你等一小時">
+                        <span class="hidden-mobile">MySQL 大表 DDL 實測：哪些操作會鎖表、哪些會讓你等一小時</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>

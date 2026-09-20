@@ -362,6 +362,158 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2026/09/20/ai-agent-mysql-ddl-verification/" target="_self">
+          用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/20/ai-agent-mysql-ddl-verification/" target="_self">
+        <div>
+          「大表加欄位會鎖表」這種問題，真要驗證是很痛的：要準備 100 萬筆資料、要跑十幾個情境、其中好幾個單一 ALTER 就跑一兩個小時，而且你得全程盯著寫入有沒有被擋。光是最後報告裡那幾個大 ALTER 的實測時間加起來就超過 4.5 小時，還不含灌資料。這種「大量等待 + 機械操作 + 但需要判斷」的任務，正好是 AI agent 最划算的應用場景。這篇不談 MySQL 的結論（那在 另一篇），
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-09-20 14:00" pubdate>
+              2026-09-20
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/AI-Agent/">#AI Agent</a>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/DDL/">#DDL</a>
+            
+              <a href="/tags/Prompt/">#Prompt</a>
+            
+              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/09/20/mysql-large-table-ddl-lock-benchmark/" target="_self">
+          MySQL 大表 DDL 實測：哪些操作會鎖表、哪些會讓你等一小時
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/20/mysql-large-table-ddl-lock-benchmark/" target="_self">
+        <div>
+          有在對大表做 DDL 的人，大概都聽過 MySQL 的 Online DDL——官方文件有一張表，清楚列出每個操作支不支援 In Place、會不會重建表、允不允許並行 DML。問題是那張表講的是「這個操作能不能線上做」，不是「你這張表現在做會怎樣」。我們的 items 表就是在 production 上加欄位出過事，而可能的解釋有好幾個，每一個都只在特定條件下成立——缺的是在自家版本與資料量上
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-09-20 12:00" pubdate>
+              2026-09-20
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/DDL/">#DDL</a>
+            
+              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
+            
+              <a href="/tags/Laravel/">#Laravel</a>
+            
+              <a href="/tags/%E6%95%88%E8%83%BD%E5%84%AA%E5%8C%96/">#效能優化</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2026/09/20/laravel-chunk-by-id-large-table-scan/" target="_self">
           大表全量掃描：從 chunk() 到 chunkByIdDesc()
         </a>
@@ -416,11 +568,11 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
+              <a href="/tags/MySQL/">#MySQL</a>
+            
               <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
             
               <a href="/tags/Laravel/">#Laravel</a>
-            
-              <a href="/tags/MySQL/">#MySQL</a>
             
               <a href="/tags/%E6%95%88%E8%83%BD%E5%84%AA%E5%8C%96/">#效能優化</a>
             
@@ -492,15 +644,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
+              <a href="/tags/AI-Agent/">#AI Agent</a>
+            
+              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
+            
               <a href="/tags/Claude-Code/">#Claude Code</a>
             
               <a href="/tags/Codex/">#Codex</a>
             
-              <a href="/tags/AI-Agent/">#AI Agent</a>
-            
               <a href="/tags/Plugin/">#Plugin</a>
-            
-              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
             
           </div>
         
@@ -644,11 +796,11 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/Claude-Code/">#Claude Code</a>
-            
               <a href="/tags/AI-Agent/">#AI Agent</a>
             
               <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
+            
+              <a href="/tags/Claude-Code/">#Claude Code</a>
             
               <a href="/tags/Multi-Agent/">#Multi-Agent</a>
             
@@ -956,81 +1108,13 @@
     </article>
   </div>
 
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/03/19/laravel-scout-elasticsearch-mapping/" target="_self">
-          Laravel Scout 更新 Elasticsearch Mappings 的兩種方式
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/03/19/laravel-scout-elasticsearch-mapping/" target="_self">
-        <div>
-          Laravel Scout 提供了兩種方式來處理 Elasticsearch 的 mappings 更新。 1. 自動更新 Mappings（設定 SCOUT_ELASTIC_UPDATE_MAPPING &#x3D; true）在 .env 設定檔中將 SCOUT_ELASTIC_UPDATE_MAPPING 設定為 true 時，Laravel Scout 會自動在模型資料變更時更新 Elas
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-03-19 10:00" pubdate>
-              2025-03-19
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/Laravel/" class="category-chain-item">Laravel</a>
-  
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Laravel/">#Laravel</a>
-            
-              <a href="/tags/Elasticsearch/">#Elasticsearch</a>
-            
-              <a href="/tags/Scout/">#Scout</a>
-            
-              <a href="/tags/%E5%BE%8C%E7%AB%AF%E9%96%8B%E7%99%BC/">#後端開發</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
 
 
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/#board">2</a><a class="extend next" rel="next" href="/page/2/#board"><i class="iconfont icon-arrowright"></i></a>
+    </span>
+  </nav>
 
 
 
