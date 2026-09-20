@@ -362,6 +362,82 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2026/09/20/laravel-chunk-by-id-large-table-scan/" target="_self">
+          大表全量掃描：從 chunk() 到 chunkByIdDesc()
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/20/laravel-chunk-by-id-large-table-scan/" target="_self">
+        <div>
+          一支要掃過五十萬筆資料的 backfill 指令，用 Laravel 的 chunk() 寫，跑到第 40 頁就開始每頁等 23 秒，全量推估要 6 小時。換成 chunkById() 之後全量 85 秒，快 180 倍。這篇談的不是「keyset 比 offset 快」這個老生常談，而是為什麼會有斷崖：MySQL 的查詢計畫在某個掃描深度會整個翻轉，從此每一頁都重做一次全結果集排序。最後還有一
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-09-20 10:00" pubdate>
+              2026-09-20
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/Laravel/" class="category-chain-item">Laravel</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/">#工程實踐</a>
+            
+              <a href="/tags/Laravel/">#Laravel</a>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/%E6%95%88%E8%83%BD%E5%84%AA%E5%8C%96/">#效能優化</a>
+            
+              <a href="/tags/%E5%88%86%E9%A0%81/">#分頁</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2026/09/19/claude-code-codex-plugin-integration/" target="_self">
           讓 Claude Code 把工作丟給 Codex：plugin 串接實戰與踩雷筆記
         </a>

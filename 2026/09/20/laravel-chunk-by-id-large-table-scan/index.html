@@ -1,0 +1,1305 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="一支要掃過五十萬筆資料的 backfill 指令，用 Laravel 的 chunk() 寫，跑到第 40 頁就開始每頁等 23 秒，全量推估要 6 小時。換成 chunkById() 之後全量 85 秒，快 180 倍。這篇談的不是「keyset 比 offset 快」這個老生常談，而是為什麼會有斷崖：MySQL 的查詢計畫在某個掃描深度會整個翻轉，從此每一頁都重做一次全結果集排序。最後還有一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大表全量掃描：從 chunk() 到 chunkByIdDesc()">
+<meta property="og:url" content="https://jh0712.github.io/2026/09/20/laravel-chunk-by-id-large-table-scan/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="一支要掃過五十萬筆資料的 backfill 指令，用 Laravel 的 chunk() 寫，跑到第 40 頁就開始每頁等 23 秒，全量推估要 6 小時。換成 chunkById() 之後全量 85 秒，快 180 倍。這篇談的不是「keyset 比 offset 快」這個老生常談，而是為什麼會有斷崖：MySQL 的查詢計畫在某個掃描深度會整個翻轉，從此每一頁都重做一次全結果集排序。最後還有一">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-20T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-20T10:23:10.867Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="工程實踐">
+<meta property="article:tag" content="Laravel">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="效能優化">
+<meta property="article:tag" content="分頁">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>大表全量掃描：從 chunk() 到 chunkByIdDesc() - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="大表全量掃描：從 chunk() 到 chunkByIdDesc()"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-20 10:00" pubdate>
+          2026年9月20日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          76 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">大表全量掃描：從 chunk() 到 chunkByIdDesc()</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>一支要掃過五十萬筆資料的 backfill 指令，用 Laravel 的 <code>chunk()</code> 寫，跑到第 40 頁就開始每頁等 23 秒，全量推估要 6 小時。換成 <code>chunkById()</code> 之後全量 85 秒，快 180 倍。這篇談的不是「keyset 比 offset 快」這個老生常談，而是<strong>為什麼會有斷崖</strong>：MySQL 的查詢計畫在某個掃描深度會整個翻轉，從此每一頁都重做一次全結果集排序。最後還有一個與效能無關的收尾——為什麼掃描方向最後選了降冪。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="重點摘要"><a href="#重點摘要" class="headerlink" title="重點摘要"></a>重點摘要</h2><p>一支 backfill 指令要掃過整張大表回填 filter metadata。原本用 <code>chunk()</code>（offset 分頁），在大表上退化到不可用；改成 <code>chunkById()</code>（keyset 分頁）後成本變平坦；最後改成 <code>chunkByIdDesc()</code>——吞吐量同量級，但先修最新的資料。</p>
+<p><strong>同樣掃過前 30,000 筆（本地實測，53 萬筆符合條件的資料）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>寫法</th>
+<th align="right">耗時</th>
+<th align="right">相對</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk()</code> — offset 分頁</td>
+<td align="right"><strong>629.8 s</strong></td>
+<td align="right">基準</td>
+</tr>
+<tr>
+<td><code>chunkById()</code> — keyset 升冪</td>
+<td align="right">3.5 s</td>
+<td align="right"><strong>快 180×</strong></td>
+</tr>
+<tr>
+<td><code>chunkByIdDesc()</code> — keyset 降冪</td>
+<td align="right">3.4 s</td>
+<td align="right"><strong>快 187×</strong></td>
+</tr>
+</tbody></table>
+<p><strong>全量掃完 53 萬筆：</strong></p>
+<table>
+<thead>
+<tr>
+<th>寫法</th>
+<th align="right">耗時</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk()</code></td>
+<td align="right"><strong>推估 ≥ 370 分鐘（6.2 小時）</strong></td>
+</tr>
+<tr>
+<td><code>chunkById()</code></td>
+<td align="right"><strong>85.1 s</strong></td>
+</tr>
+<tr>
+<td><code>chunkByIdDesc()</code></td>
+<td align="right"><strong>83.2 s</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>上表是單次執行的實測值。<strong>重跑的絕對數字會有明顯變異</strong>（offset 那欄兩次執行差 1.6 倍），但倍差穩定在 180–187×、斷崖位置固定、keyset 恆為平坦。引用時請引用<strong>量級與倍差</strong>，理由見後面「重跑的變異」。</p>
+</blockquote>
+<hr>
+<h2 id="問題來源"><a href="#問題來源" class="headerlink" title="問題來源"></a>問題來源</h2><p>一次 filter 功能改版新增了五個 metadata 欄位，還修正了兩個數值欄位的型別。這些都要對既有資料做一次全量回填，掃描條件大致是：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-title class_">Item</span>::<span class="hljs-title function_ invoke__">query</span>()<br>    -&gt;<span class="hljs-title function_ invoke__">indexable</span>()                    <span class="hljs-comment">// status = &#x27;active&#x27; AND NOT EXISTS (...)</span><br>    -&gt;<span class="hljs-title function_ invoke__">withSufficientDescription</span>()    <span class="hljs-comment">// description_length &gt;= 350</span><br>    -&gt;<span class="hljs-title function_ invoke__">with</span>([<span class="hljs-string">&#x27;location&#x27;</span>, <span class="hljs-string">&#x27;formMetadata&#x27;</span>])<br></code></pre></td></tr></table></figure>
+
+<p>當時的寫法是 <code>-&gt;orderBy(&#39;id&#39;)-&gt;chunk(500, ...)</code>。開發期間就發現：指令跑到兩萬多筆之後，進度條幾乎停住，每頁要等 5–6 秒且<strong>持續惡化</strong>。</p>
+<hr>
+<h2 id="Offset-分頁為什麼會崩潰"><a href="#Offset-分頁為什麼會崩潰" class="headerlink" title="Offset 分頁為什麼會崩潰"></a>Offset 分頁為什麼會崩潰</h2><p><code>chunk()</code> 產生的 SQL 是這樣的：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> items<br><span class="hljs-keyword">WHERE</span> status <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> (...) <span class="hljs-keyword">AND</span> description_length <span class="hljs-operator">&gt;=</span> ?<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> items.id <span class="hljs-keyword">ASC</span><br>LIMIT <span class="hljs-number">500</span> <span class="hljs-keyword">OFFSET</span> <span class="hljs-number">25000</span><br></code></pre></td></tr></table></figure>
+
+<p><code>OFFSET 25000</code> 不是「跳到第 25000 筆」——資料庫<strong>沒有辦法直接跳</strong>。它必須產生前 25,000 筆結果，然後把它們<strong>丟掉</strong>，再回傳接下來的 500 筆。第 N 頁要處理 <code>N × 500</code> 筆，整個掃描的總成本是 O(n²)。</p>
+<p>但實際量測顯示，真正的行為比 O(n²) 更糟，而且有個<strong>斷崖</strong>。</p>
+<h3 id="實測：每頁耗時-vs-掃描深度"><a href="#實測：每頁耗時-vs-掃描深度" class="headerlink" title="實測：每頁耗時 vs 掃描深度"></a>實測：每頁耗時 vs 掃描深度</h3><p>只取 <code>id</code> 欄位（隔離出純分頁成本），每個深度量 3 次取中位數：</p>
+<table>
+<thead>
+<tr>
+<th align="right">掃描深度</th>
+<th align="right"><code>LIMIT 500 OFFSET n</code></th>
+<th align="right">keyset 升冪</th>
+<th align="right">keyset 降冪</th>
+<th align="right">倍差</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">0</td>
+<td align="right">6.0 ms</td>
+<td align="right">5.8 ms</td>
+<td align="right">0.6 ms</td>
+<td align="right">1×</td>
+</tr>
+<tr>
+<td align="right">10,000</td>
+<td align="right">46.9 ms</td>
+<td align="right">6.6 ms</td>
+<td align="right">7.2 ms</td>
+<td align="right">7×</td>
+</tr>
+<tr>
+<td align="right">25,000</td>
+<td align="right"><strong>2,415.2 ms</strong></td>
+<td align="right">9.9 ms</td>
+<td align="right">8.0 ms</td>
+<td align="right"><strong>245×</strong></td>
+</tr>
+<tr>
+<td align="right">50,000</td>
+<td align="right">2,650.9 ms</td>
+<td align="right">13.7 ms</td>
+<td align="right">8.5 ms</td>
+<td align="right">194×</td>
+</tr>
+<tr>
+<td align="right">100,000</td>
+<td align="right">2,573.9 ms</td>
+<td align="right">9.7 ms</td>
+<td align="right">10.2 ms</td>
+<td align="right">264×</td>
+</tr>
+<tr>
+<td align="right">200,000</td>
+<td align="right">2,260.5 ms</td>
+<td align="right">9.2 ms</td>
+<td align="right">7.6 ms</td>
+<td align="right">247×</td>
+</tr>
+<tr>
+<td align="right">400,000</td>
+<td align="right">2,453.3 ms</td>
+<td align="right">9.7 ms</td>
+<td align="right">8.3 ms</td>
+<td align="right">254×</td>
+</tr>
+</tbody></table>
+<p>注意成本不是平滑上升，而是在 10,000 到 25,000 之間<strong>跳崖 50 倍</strong>然後持平。這代表發生的不只是「多掃幾筆」。</p>
+<h3 id="根因：查詢計畫在深度門檻翻轉"><a href="#根因：查詢計畫在深度門檻翻轉" class="headerlink" title="根因：查詢計畫在深度門檻翻轉"></a>根因：查詢計畫在深度門檻翻轉</h3><p><code>EXPLAIN</code> 同一條 query 在不同 offset 下：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs routeros">--- OFFSET 0 ---<br>  <span class="hljs-attribute">type</span>=index  <span class="hljs-attribute">key</span>=PRIMARY            <span class="hljs-attribute">rows</span>=1,000    <span class="hljs-attribute">Extra</span>=Using where<br>--- OFFSET 10000 ---<br>  <span class="hljs-attribute">type</span>=index  <span class="hljs-attribute">key</span>=PRIMARY            <span class="hljs-attribute">rows</span>=21,000   <span class="hljs-attribute">Extra</span>=Using where<br>--- OFFSET 25000 ---<br>  <span class="hljs-attribute">type</span>=ref    <span class="hljs-attribute">key</span>=idx_status_added   <span class="hljs-attribute">rows</span>=163,027  <span class="hljs-attribute">Extra</span>=Using where; Using filesort<br>--- OFFSET 400000 ---<br>  <span class="hljs-attribute">type</span>=ref    <span class="hljs-attribute">key</span>=idx_status_added   <span class="hljs-attribute">rows</span>=163,027  <span class="hljs-attribute">Extra</span>=Using where; Using filesort<br>--- KEYSET (WHERE id &gt; ?) ---<br>  <span class="hljs-attribute">type</span>=range  <span class="hljs-attribute">key</span>=PRIMARY            <span class="hljs-attribute">rows</span>=163,027  <span class="hljs-attribute">Extra</span>=Using where<br></code></pre></td></tr></table></figure>
+
+<p>兩個截然不同的執行模式：</p>
+<ul>
+<li><strong>淺頁（offset &lt; 門檻）</strong>：<code>type=index key=PRIMARY</code>——沿著主鍵順序走，讀 <code>offset + limit</code> 筆就停，不需要排序。<code>rows</code> 隨 offset 線性成長（1,000 → 21,000）。成本線性上升，總掃描 O(n²)。</li>
+<li><strong>深頁（offset ≥ 門檻）</strong>：優化器判斷「沿主鍵走 25,000 筆」比「用 status 索引過濾後排序」還貴，於是翻轉計畫——改用 status 索引撈出<strong>全部 163,027 筆</strong>符合條件的 row，然後 <strong><code>Using filesort</code> 對整組結果排序</strong>，最後才取那 500 筆。</li>
+</ul>
+<p>第二種模式的每頁成本與 offset 無關（所以持平），但它是<strong>每一頁都重做一次全結果集排序</strong>。掃完 1,063 頁 &#x3D; 排序 16 萬筆資料 1,063 次。</p>
+<ul>
+<li><strong>keyset</strong>：<code>type=range key=PRIMARY</code>，主鍵範圍掃描，<strong>沒有 filesort</strong>，且範圍上界由 <code>LIMIT</code> 決定——不論掃到多深，實際讀取都只有那 500 筆。</li>
+</ul>
+<blockquote>
+<p><code>rows=163,027</code> 是優化器的估計上限，不是實際讀取量。keyset 那列的 <code>type=range</code> + 無 filesort 才是重點。</p>
+</blockquote>
+<h3 id="加上真實工作負載後差距更大"><a href="#加上真實工作負載後差距更大" class="headerlink" title="加上真實工作負載後差距更大"></a>加上真實工作負載後差距更大</h3><p>上表只 <code>SELECT id</code>。真實指令是 <code>SELECT *</code> 加上兩個 eager load，filesort 要排的是完整資料列而不是單一欄位，斷崖更早、更陡。完整重跑三種寫法（batch&#x3D;500，callback 內不做任何實際工作，只量分頁成本）：</p>
+<table>
+<thead>
+<tr>
+<th>頁次（offset）</th>
+<th align="right"><code>chunk()</code></th>
+<th align="right"><code>chunkById()</code></th>
+<th align="right"><code>chunkByIdDesc()</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 (0)</td>
+<td align="right">205 ms</td>
+<td align="right">149 ms</td>
+<td align="right">52 ms</td>
+</tr>
+<tr>
+<td>10 (4,500)</td>
+<td align="right">288 ms</td>
+<td align="right">147 ms</td>
+<td align="right">56 ms</td>
+</tr>
+<tr>
+<td>30 (14,500)</td>
+<td align="right">239 ms</td>
+<td align="right">—</td>
+<td align="right">—</td>
+</tr>
+<tr>
+<td>40 (19,500)</td>
+<td align="right"><strong>23,842 ms</strong></td>
+<td align="right">—</td>
+<td align="right">—</td>
+</tr>
+<tr>
+<td>50 (24,500)</td>
+<td align="right">18,035 ms</td>
+<td align="right">47 ms</td>
+<td align="right">42 ms</td>
+</tr>
+<tr>
+<td>60 (29,500)</td>
+<td align="right"><strong>73,267 ms</strong></td>
+<td align="right">—</td>
+<td align="right">—</td>
+</tr>
+<tr>
+<td>200 (99,500)</td>
+<td align="right"><em>（未跑完）</em></td>
+<td align="right">103 ms</td>
+<td align="right">68 ms</td>
+</tr>
+<tr>
+<td>400 (199,500)</td>
+<td align="right"><em>（未跑完）</em></td>
+<td align="right">51 ms</td>
+<td align="right">91 ms</td>
+</tr>
+<tr>
+<td>800 (399,500)</td>
+<td align="right"><em>（未跑完）</em></td>
+<td align="right">45 ms</td>
+<td align="right">50 ms</td>
+</tr>
+<tr>
+<td>1063 (531,000)</td>
+<td align="right"><em>（未跑完）</em></td>
+<td align="right">27 ms</td>
+<td align="right">53 ms</td>
+</tr>
+</tbody></table>
+<p><code>chunk()</code> 在第 30 到 40 頁之間跳崖，第 60 頁單頁就要 <strong>73 秒</strong>，而且還在惡化。keyset 兩個版本從頭到尾都在 27–177 ms 之間，<strong>與掃描深度無關</strong>。</p>
+<hr>
+<h2 id="量測方法與數字"><a href="#量測方法與數字" class="headerlink" title="量測方法與數字"></a>量測方法與數字</h2><h3 id="環境"><a href="#環境" class="headerlink" title="環境"></a>環境</h3><ul>
+<li>本地 Docker（macOS），MySQL 容器，符合掃描條件者 <strong>531,229</strong> 筆</li>
+<li>batch size 500 → 共 1,063 頁</li>
+<li>callback 內<strong>不做</strong>任何實際的寫入工作——每頁的處理成本三種寫法完全相同，刻意排除以隔離分頁本身的成本</li>
+<li>query 與 eager load 與正式指令完全一致</li>
+</ul>
+<h3 id="結果（執行-A）"><a href="#結果（執行-A）" class="headerlink" title="結果（執行 A）"></a>結果（執行 A）</h3><table>
+<thead>
+<tr>
+<th>寫法</th>
+<th align="right">完成頁數</th>
+<th align="right">掃過筆數</th>
+<th align="right">總耗時</th>
+<th align="right">平均每頁</th>
+<th align="right">前 10 頁均</th>
+<th align="right">後 10 頁均</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk()</code> (offset)</td>
+<td align="right">60</td>
+<td align="right">30,000</td>
+<td align="right"><strong>629.8 s</strong></td>
+<td align="right">10,497 ms</td>
+<td align="right">139 ms</td>
+<td align="right"><strong>27,796 ms</strong></td>
+</tr>
+<tr>
+<td><code>chunkById()</code> (keyset)</td>
+<td align="right">1,063</td>
+<td align="right">531,229</td>
+<td align="right"><strong>85.1 s</strong></td>
+<td align="right">80 ms</td>
+<td align="right">86 ms</td>
+<td align="right">213 ms</td>
+</tr>
+<tr>
+<td><code>chunkByIdDesc()</code> (keyset)</td>
+<td align="right">1,063</td>
+<td align="right">531,229</td>
+<td align="right"><strong>83.2 s</strong></td>
+<td align="right">78 ms</td>
+<td align="right">55 ms</td>
+<td align="right">116 ms</td>
+</tr>
+</tbody></table>
+<p><code>chunk()</code> 只跑了 60 頁就中止——讓它跑完全量不切實際，這本身就是結論。</p>
+<h3 id="三個看待這組數字的角度"><a href="#三個看待這組數字的角度" class="headerlink" title="三個看待這組數字的角度"></a>三個看待這組數字的角度</h3><p><strong>1. 同樣的工作量（前 30,000 筆）</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">chunk</span><span class="hljs-params">()</span></span>          <span class="hljs-number">629.8</span> s<br><span class="hljs-function"><span class="hljs-title">chunkByIdDesc</span><span class="hljs-params">()</span></span>    <span class="hljs-number">3.4</span> s        → <span class="hljs-number">187</span>×<br></code></pre></td></tr></table></figure>
+
+<p><strong>2. 吞吐量</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">chunk</span><span class="hljs-params">()</span></span>           <span class="hljs-number">48</span> rows/s     （且持續下降）<br><span class="hljs-function"><span class="hljs-title">chunkById</span><span class="hljs-params">()</span></span>    <span class="hljs-number">6</span>,<span class="hljs-number">243</span> rows/s     （持平）<br><span class="hljs-function"><span class="hljs-title">chunkByIdDesc</span><span class="hljs-params">()</span></span> <span class="hljs-number">6</span>,<span class="hljs-number">388</span> rows/s    （持平）<br></code></pre></td></tr></table></figure>
+
+<p><strong>3. 全量掃描推估</strong></p>
+<p><code>chunk()</code> 實測 60 頁耗時 629.8 s，剩餘 1,003 頁以最後 20 頁的平均值（21.5 s&#x2F;頁）推估：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">629</span>.<span class="hljs-number">8</span> s + <span class="hljs-number">1</span>,<span class="hljs-number">003</span> × <span class="hljs-number">21</span>.<span class="hljs-number">5</span> s ≈ <span class="hljs-number">22</span>,<span class="hljs-number">194</span> s ≈ <span class="hljs-number">370</span> 分鐘（<span class="hljs-number">6</span>.<span class="hljs-number">2</span> 小時）<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ <strong>這是下界，不是精確值。</strong> 第 60 頁單頁已達 73 s，成本仍在上升，實際只會更久。真實情況下這個指令根本跑不完——這才是當初動手優化的原因。</p>
+<p>對照組：<code>chunkByIdDesc()</code> 全量 <strong>83.2 s</strong>。</p>
+</blockquote>
+<h3 id="重跑的變異（執行-B）"><a href="#重跑的變異（執行-B）" class="headerlink" title="重跑的變異（執行 B）"></a>重跑的變異（執行 B）</h3><p>同一台機器、同一份資料、同一支腳本，隔一段時間再跑一次：</p>
+<table>
+<thead>
+<tr>
+<th>指標</th>
+<th align="right">執行 A</th>
+<th align="right">執行 B</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunk()</code> 前 60 頁</td>
+<td align="right">629.8 s</td>
+<td align="right"><strong>384.2 s</strong></td>
+</tr>
+<tr>
+<td><code>chunkById()</code> 全量</td>
+<td align="right">85.1 s</td>
+<td align="right">82.1 s</td>
+</tr>
+<tr>
+<td><code>chunkByIdDesc()</code> 全量</td>
+<td align="right">83.2 s</td>
+<td align="right"><strong>58.5 s</strong></td>
+</tr>
+<tr>
+<td>同工作量倍差（前 30,000 筆）</td>
+<td align="right">187×</td>
+<td align="right"><strong>180×</strong></td>
+</tr>
+<tr>
+<td>尾段每頁均值</td>
+<td align="right">21.5 s</td>
+<td align="right"><strong>15.8 s</strong></td>
+</tr>
+<tr>
+<td>全量推估（下界）</td>
+<td align="right">370 分鐘</td>
+<td align="right"><strong>270 分鐘</strong></td>
+</tr>
+<tr>
+<td>最新 50,000 筆修復完成於（降冪）</td>
+<td align="right">5.1 s</td>
+<td align="right">3.7 s</td>
+</tr>
+<tr>
+<td>斷崖位置</td>
+<td align="right">第 30–40 頁之間</td>
+<td align="right">第 30–40 頁之間</td>
+</tr>
+</tbody></table>
+<p><strong>offset 的絕對數字在兩次執行間差了 1.6 倍</strong>（629.8 s vs 384.2 s），keyset 也有差異。這來自 buffer pool 冷熱、背景 worker 負載與容器資源競爭——這支腳本並沒有隔離這些變因。</p>
+<p>⚠️ 特別注意 <code>chunkByIdDesc()</code> 那一列（83.2 s → 58.5 s）：腳本是<strong>依序</strong>跑三種策略的，降冪永遠排在升冪之後，吃得到已經被暖起來的 buffer pool。<strong>不要把它讀成「降冪比升冪快」</strong>——理由見下一節。</p>
+<p>但<strong>結論完全不受影響</strong>，因為真正穩定的是結構性指標：</p>
+<ul>
+<li>斷崖固定落在第 30–40 頁之間（兩次都是從 ~230 ms 跳到 6,800–23,800 ms）</li>
+<li>倍差穩定在 180–187×</li>
+<li>keyset 每頁成本與深度無關（兩次都在數十毫秒量級，第 1,063 頁不比第 1 頁貴）</li>
+<li>offset 全量推估都在數小時量級，keyset 都在一分半以內</li>
+</ul>
+<p><strong>引用本文數字時請引用量級與倍差，不要引用小數點。</strong></p>
+<h3 id="與-production-觀測的對照"><a href="#與-production-觀測的對照" class="headerlink" title="與 production 觀測的對照"></a>與 production 觀測的對照</h3><p>更早之前在一個約 16 萬筆的資料集上，曾觀測到「offset 兩萬多筆處每頁 5–6 秒且持續上升」。本文的本地實測（53 萬筆、<code>SELECT *</code>）在相同深度量到 18–24 秒。兩者是<strong>同一個機制的不同規模</strong>：斷崖位置與絕對數字取決於資料量、索引統計與硬體，但「淺頁便宜 → 某個門檻翻轉計畫 → 深頁全部踩 filesort」的形狀一致。</p>
+<p><strong>不要把本文的絕對數字當成你自己系統的預期值</strong>，要記住的是形狀與量級。</p>
+<hr>
+<h2 id="為什麼最後改成降冪（chunkByIdDesc）"><a href="#為什麼最後改成降冪（chunkByIdDesc）" class="headerlink" title="為什麼最後改成降冪（chunkByIdDesc）"></a>為什麼最後改成降冪（<code>chunkByIdDesc</code>）</h2><p>兩個 keyset 版本的全量耗時落在同一量級（升冪 82–85 s、降冪 59–83 s）。<strong>這點差距不能歸因於掃描方向</strong>——腳本是依序跑三種策略的，降冪永遠排在升冪之後，吃得到已經被暖起來的 buffer pool。兩者的執行計畫也完全相同（<code>type=range key=PRIMARY</code>、無 filesort、每頁實際讀取量都等於 batch size），沒有任何機制讓方向影響吞吐量。</p>
+<p><strong>所以這次改動的理由不是效能，是修復順序。</strong></p>
+<p><code>chunkById()</code> 依 id 升冪掃描，也就是<strong>從最舊的資料開始修</strong>。在百萬級的索引上，全量 metadata 修復要跑上數小時，而使用者在搜尋結果裡看到的幾乎都是最新的資料——升冪掃描會讓「使用者實際看得到的那批資料」排在最後才修好。</p>
+<p>量化這個差異（本地，最新的 50,000 筆需要多久被修到；兩次執行）：</p>
+<table>
+<thead>
+<tr>
+<th>掃描方向</th>
+<th align="right">最新 50,000 筆修復完成於</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chunkByIdDesc()</code></td>
+<td align="right"><strong>3.7–5.1 s</strong>（前 100 頁）</td>
+</tr>
+<tr>
+<td><code>chunkById()</code></td>
+<td align="right">82–85 s（整趟跑完才輪到）</td>
+</tr>
+</tbody></table>
+<p>本地是數秒 vs 一分多鐘；production 百萬級規模下，同樣的比例是<strong>數分鐘 vs 數小時</strong>。對一個修復性質的 backfill 來說，這是「使用者何時看到正確結果」的差異。</p>
+<p>注意這個比例<strong>不受上面的量測變異影響</strong>：它不是兩種策略的效能比，而是同一趟掃描裡「最新資料排在最前面 vs 最後面」的結構性差異——降冪的分子恆為前 100 頁，升冪的分母恆為整趟。</p>
+<blockquote>
+<p>這是個<strong>在總時間相同的前提下，重排工作順序來提早交付價值</strong>的改動。不是效能優化，不要跟上一段混為一談。</p>
+</blockquote>
+<hr>
+<h2 id="順帶清掉的：多餘的-orderBy-id"><a href="#順帶清掉的：多餘的-orderBy-id" class="headerlink" title="順帶清掉的：多餘的 orderBy(&#39;id&#39;)"></a>順帶清掉的：多餘的 <code>orderBy(&#39;id&#39;)</code></h2><figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs diff">  $query = Item::query()<br>      -&gt;indexable()<br>      -&gt;withSufficientDescription()<br><span class="hljs-deletion">-     -&gt;with([&#x27;location&#x27;, &#x27;formMetadata&#x27;])</span><br><span class="hljs-deletion">-     -&gt;orderBy(&#x27;id&#x27;);</span><br><span class="hljs-addition">+     -&gt;with([&#x27;location&#x27;, &#x27;formMetadata&#x27;]);</span><br></code></pre></td></tr></table></figure>
+
+<p><code>chunkById()</code> &#x2F; <code>chunkByIdDesc()</code> 內部透過 <code>forPageAfterId()</code> 自己套用排序，外層再寫一次 <code>orderBy(&#39;id&#39;)</code> 只會讓 SQL 多出一個重複的 <code>ORDER BY</code> 子句。</p>
+<hr>
+<h2 id="陷阱：chunkById-的游標欄位必須唯一"><a href="#陷阱：chunkById-的游標欄位必須唯一" class="headerlink" title="陷阱：chunkById() 的游標欄位必須唯一"></a>陷阱：<code>chunkById()</code> 的游標欄位必須唯一</h2><p>Keyset 分頁靠 <code>WHERE id &gt; $lastSeenId</code> 前進，這個前提是<strong>游標欄位在結果集中唯一</strong>。用非唯一欄位當游標會靜默漏資料。</p>
+<p>同一次 PR review 就抓到一個實例：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-comment">// ❌ 修改前：用非唯一的外鍵當游標，還加了 distinct()</span><br><span class="hljs-title class_">ChildRecord</span>::<span class="hljs-title function_ invoke__">query</span>()<br>    -&gt;<span class="hljs-title function_ invoke__">where</span>(<span class="hljs-string">&#x27;updated_at&#x27;</span>, <span class="hljs-string">&#x27;&gt;=&#x27;</span>, <span class="hljs-variable">$since</span>)<br>    -&gt;<span class="hljs-title function_ invoke__">select</span>(<span class="hljs-string">&#x27;parent_id&#x27;</span>)<br>    -&gt;<span class="hljs-title function_ invoke__">distinct</span>()<br>    -&gt;<span class="hljs-title function_ invoke__">orderBy</span>(<span class="hljs-string">&#x27;parent_id&#x27;</span>)<br>    -&gt;<span class="hljs-title function_ invoke__">chunkById</span>(<span class="hljs-variable">$chunkSize</span>, <span class="hljs-variable">$callback</span>, <span class="hljs-string">&#x27;parent_id&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<p>一個 parent 可以有多筆 child，<code>parent_id</code> 因此不唯一。當某頁的最後一筆與下一筆共用同一個 <code>parent_id</code> 時，<code>WHERE parent_id &gt; $last</code> 會把後者<strong>整批跳過</strong>；<code>distinct()</code> 又讓每頁實際筆數與 chunk size 對不上，分頁邊界更難預期。</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-comment">// ✅ 修改後：用主鍵當游標，去重在 PHP 做</span><br><span class="hljs-title class_">ChildRecord</span>::<span class="hljs-title function_ invoke__">query</span>()<br>    -&gt;<span class="hljs-title function_ invoke__">where</span>(<span class="hljs-string">&#x27;updated_at&#x27;</span>, <span class="hljs-string">&#x27;&gt;=&#x27;</span>, <span class="hljs-variable">$since</span>)<br>    -&gt;<span class="hljs-title function_ invoke__">select</span>([<span class="hljs-string">&#x27;id&#x27;</span>, <span class="hljs-string">&#x27;parent_id&#x27;</span>])<br>    -&gt;<span class="hljs-title function_ invoke__">chunkById</span>(<span class="hljs-variable">$chunkSize</span>, function (<span class="hljs-variable">$records</span>) &#123;<br>        <span class="hljs-variable">$parentIds</span> = <span class="hljs-variable">$records</span>-&gt;<span class="hljs-title function_ invoke__">pluck</span>(<span class="hljs-string">&#x27;parent_id&#x27;</span>)<br>            -&gt;<span class="hljs-title function_ invoke__">filter</span>(fn (<span class="hljs-variable">$id</span>) =&gt; <span class="hljs-title function_ invoke__">is_numeric</span>(<span class="hljs-variable">$id</span>))<br>            -&gt;<span class="hljs-title function_ invoke__">map</span>(fn (<span class="hljs-variable">$id</span>): <span class="hljs-keyword">int</span> =&gt; (<span class="hljs-keyword">int</span>) <span class="hljs-variable">$id</span>)<br>            -&gt;<span class="hljs-title function_ invoke__">unique</span>()<br>            -&gt;<span class="hljs-title function_ invoke__">values</span>()<br>            -&gt;<span class="hljs-title function_ invoke__">all</span>();<br>        <span class="hljs-comment">// ...</span><br>    &#125;);   <span class="hljs-comment">// 不指定第三參數 → 預設用主鍵</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>規則：<code>chunkById()</code> 的游標一律用主鍵。</strong> 需要去重就在 PHP 層做，不要靠 <code>distinct()</code> 配非唯一游標。</p>
+<hr>
+<h2 id="額外好處：keyset-對「掃描中修改資料」是安全的"><a href="#額外好處：keyset-對「掃描中修改資料」是安全的" class="headerlink" title="額外好處：keyset 對「掃描中修改資料」是安全的"></a>額外好處：keyset 對「掃描中修改資料」是安全的</h2><p>前面談的都是效能。但 offset 分頁還有一個<strong>與效能無關的正確性問題</strong>，而且它比慢更危險——因為它不會報錯，只會安靜地漏掉資料。</p>
+<h3 id="問題的本質：offset-是「位置」，而位置會動"><a href="#問題的本質：offset-是「位置」，而位置會動" class="headerlink" title="問題的本質：offset 是「位置」，而位置會動"></a>問題的本質：offset 是「位置」，而位置會動</h3><p><code>OFFSET 500</code> 的意思是「在<strong>目前這條 query 的結果集裡</strong>，跳過前 500 筆」。關鍵在於，這個結果集是<strong>每一頁重新算一次的</strong>——<code>chunk()</code> 每翻一頁就重跑一次完整的 <code>SELECT ... WHERE ... LIMIT 500 OFFSET n</code>。</p>
+<p>如果 callback 改動了會影響 <code>WHERE</code> 條件的欄位，下一頁重算出來的結果集就已經不是同一組資料了。offset 指向的位置還在原地，但資料整個往前滑了。</p>
+<h3 id="走一遍：1-000-筆資料，漏掉一半"><a href="#走一遍：1-000-筆資料，漏掉一半" class="headerlink" title="走一遍：1,000 筆資料，漏掉一半"></a>走一遍：1,000 筆資料，漏掉一半</h3><p>假設要掃 <code>status = &#39;active&#39;</code> 的 1,000 筆資料，每頁 500 筆，callback 的工作是處理完就把 status 改掉：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-comment">// ❌ 會漏資料</span><br><span class="hljs-title class_">Item</span>::<span class="hljs-title function_ invoke__">where</span>(<span class="hljs-string">&#x27;status&#x27;</span>, <span class="hljs-string">&#x27;active&#x27;</span>)-&gt;<span class="hljs-title function_ invoke__">chunk</span>(<span class="hljs-number">500</span>, function (<span class="hljs-variable">$items</span>) &#123;<br>    <span class="hljs-keyword">foreach</span> (<span class="hljs-variable">$items</span> <span class="hljs-keyword">as</span> <span class="hljs-variable">$item</span>) &#123;<br>        <span class="hljs-variable">$item</span>-&gt;<span class="hljs-title function_ invoke__">update</span>([<span class="hljs-string">&#x27;status&#x27;</span> =&gt; <span class="hljs-string">&#x27;processed&#x27;</span>]);   <span class="hljs-comment">// 改動了 WHERE 條件的欄位</span><br>    &#125;<br>&#125;);<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>步驟</th>
+<th>SQL</th>
+<th align="right">符合條件的總筆數</th>
+<th>實際拿到</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第 1 頁</td>
+<td><code>LIMIT 500 OFFSET 0</code></td>
+<td align="right">1,000</td>
+<td>原始的第 1–500 筆 ✅</td>
+</tr>
+<tr>
+<td>callback 執行後</td>
+<td>—</td>
+<td align="right"><strong>500</strong>（前 500 筆已變成 <code>processed</code>）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>第 2 頁</td>
+<td><code>LIMIT 500 OFFSET 500</code></td>
+<td align="right">500</td>
+<td><strong>空的</strong> ❌</td>
+</tr>
+</tbody></table>
+<p>第 2 頁下 <code>OFFSET 500</code>，但此刻結果集裡總共就只剩 500 筆（原本的第 501–1000 筆，現在排在位置 1–500）。跳過前 500 筆之後什麼都不剩，query 回傳空集合，<code>chunk()</code> 認定掃完了、正常結束。</p>
+<p><strong>一半的資料從頭到尾沒被碰過，而且指令的 exit code 是 0。</strong> 沒有例外、沒有警告、進度條還會漂亮地跑到底。</p>
+<p>如果 callback 只改動部分 row，症狀會更難察覺：改掉 N 筆，後面的資料就往前位移 N 格，下一頁的 offset 會跳過 N 筆——漏掉的比例剛好等於你改動的比例，而且散布在整個資料集裡，肉眼對不出來。</p>
+<h3 id="反方向也會出事"><a href="#反方向也會出事" class="headerlink" title="反方向也會出事"></a>反方向也會出事</h3><p>如果 callback 讓<strong>更多</strong> row 符合 <code>WHERE</code> 條件（例如把別的資料改成 <code>active</code>，或掃描期間有新資料寫入），位移方向相反：後面的 row 往後退，下一頁的 offset 會<strong>重複拿到已經處理過的資料</strong>。</p>
+<p>對於非冪等的 callback（發通知、扣額度、寫入計數），重複處理的後果通常比漏掉更嚴重。</p>
+<h3 id="keyset-為什麼不受影響"><a href="#keyset-為什麼不受影響" class="headerlink" title="keyset 為什麼不受影響"></a>keyset 為什麼不受影響</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- offset：問「第 501 個位置是誰」——答案會隨結果集變動</span><br>LIMIT <span class="hljs-number">500</span> <span class="hljs-keyword">OFFSET</span> <span class="hljs-number">500</span><br><br><span class="hljs-comment">-- keyset：問「id 比 1234 大的下 500 筆是誰」——答案只跟 id 有關</span><br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">&gt;</span> <span class="hljs-number">1234</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> id LIMIT <span class="hljs-number">500</span><br></code></pre></td></tr></table></figure>
+
+<p><code>chunkById()</code> 記的是<strong>上次看到的那筆資料的 id</strong>，不是位置。不管結果集在這期間縮小、膨脹還是重排，「id &gt; 1234」指向的永遠是同一個邊界。已處理過的資料從結果集裡消失，反而讓後續每一頁都更省事——這也是為什麼 keyset 配上「處理完就改狀態」的模式，效能會比純掃描更好。</p>
+<blockquote>
+<p>順帶一提，Laravel 官方文件對 <code>chunk()</code> 也有同樣的警告，並直接建議在更新資料時改用 <code>chunkById()</code>。這不是什麼冷知識，但它藏在文件段落裡，很容易在趕工時略過。</p>
+</blockquote>
+<p><strong>規則：任何會在掃描過程中修改資料的批次作業，都必須用 <code>chunkById()</code>。</strong> 就算資料量小到 offset 的效能問題還沒浮現，正確性問題從第一頁就存在了。</p>
+<hr>
+<h2 id="收斂成六條規則"><a href="#收斂成六條規則" class="headerlink" title="收斂成六條規則"></a>收斂成六條規則</h2><p>這次的結論最後寫進了專案的開發規範：</p>
+<ol>
+<li><strong>大表全量掃描一律用 <code>chunkById()</code> &#x2F; <code>chunkByIdDesc()</code>，不要用 <code>chunk()</code> &#x2F; <code>offset()</code> &#x2F; <code>paginate()</code>。</strong> Offset 分頁在超過某個深度後會讓查詢計畫翻轉成「每頁重做一次全結果集 filesort」，實測深頁單頁 18–73 秒，全量掃描不可行。</li>
+<li><strong><code>chunkById()</code> 的游標欄位必須唯一，一律用主鍵。</strong> 非唯一游標會在邊界值處靜默跳過整批資料；需要去重時在 PHP 層 <code>-&gt;unique()</code>，不要用 <code>distinct()</code> 配非唯一游標。</li>
+<li><strong>不要在 <code>chunkById()</code> 外層再寫 <code>orderBy()</code>。</strong> 它會自己套用排序，外層只會產生重複的 <code>ORDER BY</code>。</li>
+<li><strong>修復性質的 backfill 用 <code>chunkByIdDesc()</code>。</strong> 總時間相同，但最新、使用者實際看得到的資料會先被修好。</li>
+<li><strong>會在掃描過程中修改資料的批次作業必須用 <code>chunkById()</code>。</strong> Offset 分頁在 callback 改動影響 <code>WHERE</code> 條件的欄位時，結果集會位移導致跳過資料。</li>
+<li><strong>效能宣稱要附上量測方式。</strong> 至少要有「同樣工作量的 before&#x2F;after」與量測環境；<code>EXPLAIN</code> 是判斷分頁退化的第一個工具，看 <code>type</code> 與 <code>Extra</code> 有沒有 <code>Using filesort</code>。</li>
+</ol>
+<hr>
+<h2 id="如果你想在自己的系統上驗證"><a href="#如果你想在自己的系統上驗證" class="headerlink" title="如果你想在自己的系統上驗證"></a>如果你想在自己的系統上驗證</h2><p>三支腳本的設計思路，照著寫就能重現本文的三張表：</p>
+<ol>
+<li><strong>執行計畫比對</strong>（數秒）——同一條 query 套不同 offset 跑 <code>EXPLAIN</code>，看 <code>type</code> &#x2F; <code>key</code> &#x2F; <code>Extra</code> 在哪個深度翻轉。這是最快能確認「你的系統有沒有這個問題」的方法。</li>
+<li><strong>單頁延遲 vs 掃描深度</strong>（約 2 分鐘）——只 <code>SELECT id</code>，在 0 &#x2F; 1 萬 &#x2F; 2.5 萬 &#x2F; 5 萬 &#x2F; 10 萬 &#x2F; 20 萬 &#x2F; 40 萬各量 3 次取中位數，藉此隔離出分頁策略本身的成本。</li>
+<li><strong>端對端全量掃描</strong>（約 15 分鐘）——三種寫法各跑一次，chunk callback <strong>刻意不做任何實際工作</strong>；<code>chunk()</code> 跑滿 60 頁就中止，讓它跑完全量並不實際。</li>
+</ol>
+<blockquote>
+<p>⚠️ 這類腳本會掃過整張表數次。<strong>只在本地或 staging 跑，不要對 production 執行。</strong></p>
+</blockquote>
+<p>重跑時要對照的是<strong>形狀與量級</strong>（淺頁便宜 → 某個門檻翻轉計畫 → 深頁全部踩 filesort），不是絕對數字——那會隨資料量、索引統計與硬體而變。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/Laravel/" class="category-chain-item">Laravel</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+        <a href="/tags/Laravel/" class="print-no-link">#Laravel</a>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
+      
+        <a href="/tags/%E6%95%88%E8%83%BD%E5%84%AA%E5%8C%96/" class="print-no-link">#效能優化</a>
+      
+        <a href="/tags/%E5%88%86%E9%A0%81/" class="print-no-link">#分頁</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>大表全量掃描：從 chunk() 到 chunkByIdDesc()</div>
+      <div>https://jh0712.github.io/2026/09/20/laravel-chunk-by-id-large-table-scan/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年9月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/19/claude-code-codex-plugin-integration/" title="讓 Claude Code 把工作丟給 Codex：plugin 串接實戰與踩雷筆記">
+                        <span class="hidden-mobile">讓 Claude Code 把工作丟給 Codex：plugin 串接實戰與踩雷筆記</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>
