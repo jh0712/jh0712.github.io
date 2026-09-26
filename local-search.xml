@@ -4,6 +4,41 @@
   
   
   <entry>
+    <title>最近用到一個很順手的 AI 語音輸入工具：Typeless</title>
+    <link href="/2026/09/26/typeless-ai-voice-input/"/>
+    <url>/2026/09/26/typeless-ai-voice-input/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>最近開始用一個叫 <strong><a href="https://www.typeless.com/about">Typeless</a></strong> 的 AI 語音輸入工具。它做的事情一句話就講得完：<strong>按一個按鍵 → 直接講話 → AI 幫你整理 → 文字直接出現在游標的位置。</strong> 但實際用下來，它比單純的「語音轉文字」方便很多。這篇整理我用了一段時間後覺得真正有感的幾個地方，以及它讓我對「鍵盤輸入」這件事產生的一些想法。</p></blockquote><span id="more"></span><h2 id="不只是把聲音轉成文字"><a href="#不只是把聲音轉成文字" class="headerlink" title="不只是把聲音轉成文字"></a>不只是把聲音轉成文字</h2><p>邊講話邊思考的時候，講出來的內容很容易變成這樣：</p><blockquote><p>「我覺得這個功能可能可以這樣做，然後應該先處理這個，不對，可能另外一個要先，然後還有另外一個需求需要考慮，有一個隱藏風險……」</p></blockquote><p>如果只是單純的 Speech-to-Text，最後拿到的通常就是一大串很口語的文字，我還是得自己再整理一次。</p><p>Typeless 不一樣的地方在於：它在語音轉文字的過程中，<strong>會再透過 AI 幫你潤稿跟整理。</strong></p><p>所以可以比較自然地把腦袋裡的東西直接講出來，不用一邊講、一邊煩惱：</p><blockquote><p>「我要怎麼講，才會像一段完整的文字？」</p></blockquote><p>這點我自己用下來很有感，也確實省下了不少打字的時間。</p><h2 id="最喜歡的一點：直接在「你正在工作的地方」輸入"><a href="#最喜歡的一點：直接在「你正在工作的地方」輸入" class="headerlink" title="最喜歡的一點：直接在「你正在工作的地方」輸入"></a>最喜歡的一點：直接在「你正在工作的地方」輸入</h2><p>這是我覺得整個體驗裡最重要的部分。</p><p>用 Typeless 的時候，不需要走這一整串流程：</p><p>錄音 → 打開另一個 App → 轉文字 → 複製 → 切回原本的 App → 貼上</p><p>它看的是你現在在哪個視窗、游標停在哪個輸入框。按下快捷鍵開始講話，處理好的文字就會<strong>直接輸入到目前游標所在的位置</strong>。</p><p>所以不管是在 Slack &#x2F; Teams、Notion、GitHub、Trello、瀏覽器、文件，甚至是寫 Prompt，操作方式都一樣。</p><p>這種工具真正省下來的，很多時候不是「打字速度」，而是<strong>大量切換視窗、複製貼上，以及重新整理語句的成本</strong>。</p><h2 id="忘記點輸入框也沒關係"><a href="#忘記點輸入框也沒關係" class="headerlink" title="忘記點輸入框也沒關係"></a>忘記點輸入框也沒關係</h2><p>有時候會發生一個很尷尬的狀況：講了一大串之後，才發現自己根本沒點到可以輸入文字的地方。</p><p>不過 Typeless 有一個 App 管理介面，可以看到之前的語音輸入紀錄。所以就算當下沒有成功貼進文字框，剛剛講的內容也不會就這樣消失。</p><p>這個小地方我覺得很重要。它降低了使用語音輸入時的心理負擔——不需要每次開口前都小心確認「游標到底在不在正確的位置」。</p><h2 id="它也有-AI-搜尋"><a href="#它也有-AI-搜尋" class="headerlink" title="它也有 AI 搜尋"></a>它也有 AI 搜尋</h2><p>另一個我最近常用的功能是搜尋，一樣是很簡單的快捷鍵操作：</p><p><strong>按一下 → 直接講出你想問的問題 → 搜尋。</strong></p><p>以前遇到一個小問題，我常常會想：「算了，晚點再查。」因為要切畫面、開搜尋、想關鍵字、打字。</p><p>但當搜尋的成本變成「按一下按鍵，把問題講出來」，很多原本懶得查的小問題，就會當下直接查掉。</p><p>這其實很像 AI 出現之後，我越來越明顯的一個感受：</p><p><strong>很多工具真正的價值，不只是答案變聰明，而是讓「想到問題 → 開始處理問題」之間的距離變得非常短。</strong></p><p>不過公平地說，這一點 ChatGPT 的 Desktop App 也有類似的功能，不算是 Typeless 獨有的優勢。</p><h2 id="新手教學做得很好"><a href="#新手教學做得很好" class="headerlink" title="新手教學做得很好"></a>新手教學做得很好</h2><p>另一個讓我印象很深的是它的 onboarding。</p><p>下載之後，它不是丟一篇文件叫你自己研究快捷鍵，而是跳出一個小 App，一步一步帶你操作。有點像遊戲的新手教學：先叫你按某個按鍵、講一句話，再讓你實際看到結果。</p><p>所以基本上不用特別看說明文件，就知道怎麼用了。</p><p>這種 onboarding 看起來很小，但對一個<strong>需要改變使用者輸入習慣</strong>的產品來說，我覺得其實非常關鍵。</p><h2 id="免費額度"><a href="#免費額度" class="headerlink" title="免費額度"></a>免費額度</h2><p>目前（2026 年 9 月）免費方案是<strong>每週 2,000 字</strong>。拿來日常回訊息、寫 Prompt 試用一下是夠的，重度使用的話就要考慮付費方案。</p><h2 id="用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式"><a href="#用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式" class="headerlink" title="用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式"></a>用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式</h2><p>以前我一直覺得：<strong>電腦工作 &#x3D; 鍵盤輸入。</strong> 尤其身為工程師，每天大部分時間都在鍵盤上。</p><p>但用了 Typeless 之後，我開始慢慢把工作分成兩種：</p><table><thead><tr><th>類型</th><th>例子</th><th>我的輸入方式</th></tr></thead><tbody><tr><td>需要精確操作</td><td>寫 code、修改特定文字</td><td>鍵盤</td></tr><tr><td>表達想法為主</td><td>整理想法、回覆訊息、描述需求、寫文件初稿、寫 Prompt、記錄突然想到的事</td><td>直接用說的</td></tr></tbody></table><p>後者其實「直接說」往往比「先在腦袋整理好，再打出來」自然很多。</p><p>而 AI 剛好補上了語音輸入以前最大的缺點：<strong>人講出來的東西通常很亂。</strong></p><p>以前 Speech-to-Text 解決的是：</p><blockquote><p>「把我說的話變成文字。」</p></blockquote><p>現在 AI Voice Input 開始解決的是：</p><blockquote><p><strong>「理解我想表達什麼，然後幫我變成可以直接使用的文字。」</strong></p></blockquote><p>我覺得這兩件事差非常多。</p><h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>目前 Typeless 我自己用下來的體驗很不錯。</p><p>如果你平常需要大量打字、回訊息、寫文件、寫 Prompt，或者單純覺得自己的思考速度比打字速度快很多，我覺得可以到 <a href="https://www.typeless.com/about">Typeless 官網</a> 下載來玩玩看。</p><p>至少對我來說，它已經慢慢從一個「有趣的 AI 工具」，變成真的會放進日常工作流程裡的工具。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>技術文章</category>
+      
+      <category>工程實踐</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>AI 工具</tag>
+      
+      <tag>語音輸入</tag>
+      
+      <tag>Typeless</tag>
+      
+      <tag>生產力</tag>
+      
+      <tag>工作流程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告</title>
     <link href="/2026/09/20/ai-agent-mysql-ddl-verification/"/>
     <url>/2026/09/20/ai-agent-mysql-ddl-verification/</url>

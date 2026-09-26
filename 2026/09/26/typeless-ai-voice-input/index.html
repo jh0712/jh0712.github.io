@@ -1,0 +1,931 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="最近開始用一個叫 Typeless 的 AI 語音輸入工具。它做的事情一句話就講得完：按一個按鍵 → 直接講話 → AI 幫你整理 → 文字直接出現在游標的位置。 但實際用下來，它比單純的「語音轉文字」方便很多。這篇整理我用了一段時間後覺得真正有感的幾個地方，以及它讓我對「鍵盤輸入」這件事產生的一些想法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="最近用到一個很順手的 AI 語音輸入工具：Typeless">
+<meta property="og:url" content="https://jh0712.github.io/2026/09/26/typeless-ai-voice-input/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="最近開始用一個叫 Typeless 的 AI 語音輸入工具。它做的事情一句話就講得完：按一個按鍵 → 直接講話 → AI 幫你整理 → 文字直接出現在游標的位置。 但實際用下來，它比單純的「語音轉文字」方便很多。這篇整理我用了一段時間後覺得真正有感的幾個地方，以及它讓我對「鍵盤輸入」這件事產生的一些想法。">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-09-26T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-26T15:56:02.782Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="AI 工具">
+<meta property="article:tag" content="語音輸入">
+<meta property="article:tag" content="Typeless">
+<meta property="article:tag" content="生產力">
+<meta property="article:tag" content="工作流程">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>最近用到一個很順手的 AI 語音輸入工具：Typeless - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="最近用到一個很順手的 AI 語音輸入工具：Typeless"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-26 10:00" pubdate>
+          2026年9月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">最近用到一個很順手的 AI 語音輸入工具：Typeless</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>最近開始用一個叫 <strong><a target="_blank" rel="noopener" href="https://www.typeless.com/about">Typeless</a></strong> 的 AI 語音輸入工具。它做的事情一句話就講得完：<strong>按一個按鍵 → 直接講話 → AI 幫你整理 → 文字直接出現在游標的位置。</strong> 但實際用下來，它比單純的「語音轉文字」方便很多。這篇整理我用了一段時間後覺得真正有感的幾個地方，以及它讓我對「鍵盤輸入」這件事產生的一些想法。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="不只是把聲音轉成文字"><a href="#不只是把聲音轉成文字" class="headerlink" title="不只是把聲音轉成文字"></a>不只是把聲音轉成文字</h2><p>邊講話邊思考的時候，講出來的內容很容易變成這樣：</p>
+<blockquote>
+<p>「我覺得這個功能可能可以這樣做，然後應該先處理這個，不對，可能另外一個要先，然後還有另外一個需求需要考慮，有一個隱藏風險……」</p>
+</blockquote>
+<p>如果只是單純的 Speech-to-Text，最後拿到的通常就是一大串很口語的文字，我還是得自己再整理一次。</p>
+<p>Typeless 不一樣的地方在於：它在語音轉文字的過程中，<strong>會再透過 AI 幫你潤稿跟整理。</strong></p>
+<p>所以可以比較自然地把腦袋裡的東西直接講出來，不用一邊講、一邊煩惱：</p>
+<blockquote>
+<p>「我要怎麼講，才會像一段完整的文字？」</p>
+</blockquote>
+<p>這點我自己用下來很有感，也確實省下了不少打字的時間。</p>
+<h2 id="最喜歡的一點：直接在「你正在工作的地方」輸入"><a href="#最喜歡的一點：直接在「你正在工作的地方」輸入" class="headerlink" title="最喜歡的一點：直接在「你正在工作的地方」輸入"></a>最喜歡的一點：直接在「你正在工作的地方」輸入</h2><p>這是我覺得整個體驗裡最重要的部分。</p>
+<p>用 Typeless 的時候，不需要走這一整串流程：</p>
+<p>錄音 → 打開另一個 App → 轉文字 → 複製 → 切回原本的 App → 貼上</p>
+<p>它看的是你現在在哪個視窗、游標停在哪個輸入框。按下快捷鍵開始講話，處理好的文字就會<strong>直接輸入到目前游標所在的位置</strong>。</p>
+<p>所以不管是在 Slack &#x2F; Teams、Notion、GitHub、Trello、瀏覽器、文件，甚至是寫 Prompt，操作方式都一樣。</p>
+<p>這種工具真正省下來的，很多時候不是「打字速度」，而是<strong>大量切換視窗、複製貼上，以及重新整理語句的成本</strong>。</p>
+<h2 id="忘記點輸入框也沒關係"><a href="#忘記點輸入框也沒關係" class="headerlink" title="忘記點輸入框也沒關係"></a>忘記點輸入框也沒關係</h2><p>有時候會發生一個很尷尬的狀況：講了一大串之後，才發現自己根本沒點到可以輸入文字的地方。</p>
+<p>不過 Typeless 有一個 App 管理介面，可以看到之前的語音輸入紀錄。所以就算當下沒有成功貼進文字框，剛剛講的內容也不會就這樣消失。</p>
+<p>這個小地方我覺得很重要。它降低了使用語音輸入時的心理負擔——不需要每次開口前都小心確認「游標到底在不在正確的位置」。</p>
+<h2 id="它也有-AI-搜尋"><a href="#它也有-AI-搜尋" class="headerlink" title="它也有 AI 搜尋"></a>它也有 AI 搜尋</h2><p>另一個我最近常用的功能是搜尋，一樣是很簡單的快捷鍵操作：</p>
+<p><strong>按一下 → 直接講出你想問的問題 → 搜尋。</strong></p>
+<p>以前遇到一個小問題，我常常會想：「算了，晚點再查。」因為要切畫面、開搜尋、想關鍵字、打字。</p>
+<p>但當搜尋的成本變成「按一下按鍵，把問題講出來」，很多原本懶得查的小問題，就會當下直接查掉。</p>
+<p>這其實很像 AI 出現之後，我越來越明顯的一個感受：</p>
+<p><strong>很多工具真正的價值，不只是答案變聰明，而是讓「想到問題 → 開始處理問題」之間的距離變得非常短。</strong></p>
+<p>不過公平地說，這一點 ChatGPT 的 Desktop App 也有類似的功能，不算是 Typeless 獨有的優勢。</p>
+<h2 id="新手教學做得很好"><a href="#新手教學做得很好" class="headerlink" title="新手教學做得很好"></a>新手教學做得很好</h2><p>另一個讓我印象很深的是它的 onboarding。</p>
+<p>下載之後，它不是丟一篇文件叫你自己研究快捷鍵，而是跳出一個小 App，一步一步帶你操作。有點像遊戲的新手教學：先叫你按某個按鍵、講一句話，再讓你實際看到結果。</p>
+<p>所以基本上不用特別看說明文件，就知道怎麼用了。</p>
+<p>這種 onboarding 看起來很小，但對一個<strong>需要改變使用者輸入習慣</strong>的產品來說，我覺得其實非常關鍵。</p>
+<h2 id="免費額度"><a href="#免費額度" class="headerlink" title="免費額度"></a>免費額度</h2><p>目前（2026 年 9 月）免費方案是<strong>每週 2,000 字</strong>。拿來日常回訊息、寫 Prompt 試用一下是夠的，重度使用的話就要考慮付費方案。</p>
+<h2 id="用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式"><a href="#用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式" class="headerlink" title="用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式"></a>用了一段時間，我開始覺得「鍵盤」不一定永遠是主要輸入方式</h2><p>以前我一直覺得：<strong>電腦工作 &#x3D; 鍵盤輸入。</strong> 尤其身為工程師，每天大部分時間都在鍵盤上。</p>
+<p>但用了 Typeless 之後，我開始慢慢把工作分成兩種：</p>
+<table>
+<thead>
+<tr>
+<th>類型</th>
+<th>例子</th>
+<th>我的輸入方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>需要精確操作</td>
+<td>寫 code、修改特定文字</td>
+<td>鍵盤</td>
+</tr>
+<tr>
+<td>表達想法為主</td>
+<td>整理想法、回覆訊息、描述需求、寫文件初稿、寫 Prompt、記錄突然想到的事</td>
+<td>直接用說的</td>
+</tr>
+</tbody></table>
+<p>後者其實「直接說」往往比「先在腦袋整理好，再打出來」自然很多。</p>
+<p>而 AI 剛好補上了語音輸入以前最大的缺點：<strong>人講出來的東西通常很亂。</strong></p>
+<p>以前 Speech-to-Text 解決的是：</p>
+<blockquote>
+<p>「把我說的話變成文字。」</p>
+</blockquote>
+<p>現在 AI Voice Input 開始解決的是：</p>
+<blockquote>
+<p><strong>「理解我想表達什麼，然後幫我變成可以直接使用的文字。」</strong></p>
+</blockquote>
+<p>我覺得這兩件事差非常多。</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>目前 Typeless 我自己用下來的體驗很不錯。</p>
+<p>如果你平常需要大量打字、回訊息、寫文件、寫 Prompt，或者單純覺得自己的思考速度比打字速度快很多，我覺得可以到 <a target="_blank" rel="noopener" href="https://www.typeless.com/about">Typeless 官網</a> 下載來玩玩看。</p>
+<p>至少對我來說，它已經慢慢從一個「有趣的 AI 工具」，變成真的會放進日常工作流程裡的工具。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/AI-%E5%B7%A5%E5%85%B7/" class="print-no-link">#AI 工具</a>
+      
+        <a href="/tags/%E8%AA%9E%E9%9F%B3%E8%BC%B8%E5%85%A5/" class="print-no-link">#語音輸入</a>
+      
+        <a href="/tags/Typeless/" class="print-no-link">#Typeless</a>
+      
+        <a href="/tags/%E7%94%9F%E7%94%A2%E5%8A%9B/" class="print-no-link">#生產力</a>
+      
+        <a href="/tags/%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B/" class="print-no-link">#工作流程</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>最近用到一個很順手的 AI 語音輸入工具：Typeless</div>
+      <div>https://jh0712.github.io/2026/09/26/typeless-ai-voice-input/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年9月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/20/ai-agent-mysql-ddl-verification/" title="用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告">
+                        <span class="hidden-mobile">用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>
