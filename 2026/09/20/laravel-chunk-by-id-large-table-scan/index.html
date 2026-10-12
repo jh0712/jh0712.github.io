@@ -27,10 +27,10 @@
 <meta property="og:description" content="一支要掃過五十萬筆資料的 backfill 指令，用 Laravel 的 chunk() 寫，跑到第 40 頁就開始每頁等 23 秒，全量推估要 6 小時。換成 chunkById() 之後全量 85 秒，快 180 倍。這篇談的不是「keyset 比 offset 快」這個老生常談，而是為什麼會有斷崖：MySQL 的查詢計畫在某個掃描深度會整個翻轉，從此每一頁都重做一次全結果集排序。最後還有一">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2026-09-20T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-11T15:40:55.684Z">
+<meta property="article:modified_time" content="2026-10-12T17:40:40.190Z">
 <meta property="article:author" content="Kite">
-<meta property="article:tag" content="工程實踐">
 <meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="工程實踐">
 <meta property="article:tag" content="Laravel">
 <meta property="article:tag" content="效能優化">
 <meta property="article:tag" content="分頁">
@@ -897,9 +897,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
-      
         <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
       
         <a href="/tags/Laravel/" class="print-no-link">#Laravel</a>
       

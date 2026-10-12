@@ -1,0 +1,1087 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="2025 年時，我認為工程師的重心會從「把程式碼寫出來」轉向驗證、架構與需求理解。到了 2026 年，我還是認同這個方向，但多了一層體會：使用 AI 越來越像是在跟人合作。理解它的邊界、定義清楚的完成條件、給它驗證機制，最後 Prompt Engineering 可能會變成 AI Management。而在 AI 變強的同時，人也應該跟著變強。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="從 AI 寫 Code 到管理 AI：我這兩年對工程師角色變化的觀察">
+<meta property="og:url" content="https://jh0712.github.io/2026/10/12/from-ai-coding-to-ai-management/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="2025 年時，我認為工程師的重心會從「把程式碼寫出來」轉向驗證、架構與需求理解。到了 2026 年，我還是認同這個方向，但多了一層體會：使用 AI 越來越像是在跟人合作。理解它的邊界、定義清楚的完成條件、給它驗證機制，最後 Prompt Engineering 可能會變成 AI Management。而在 AI 變強的同時，人也應該跟著變強。">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-10-12T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-12T17:40:40.190Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="AI Agent">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="Prompt Engineering">
+<meta property="article:tag" content="工程師職涯">
+<meta property="article:tag" content="軟體工程">
+<meta property="article:tag" content="個人觀點">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>從 AI 寫 Code 到管理 AI：我這兩年對工程師角色變化的觀察 - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="從 AI 寫 Code 到管理 AI：我這兩年對工程師角色變化的觀察"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-12 10:00" pubdate>
+          2026年10月12日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          50 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">從 AI 寫 Code 到管理 AI：我這兩年對工程師角色變化的觀察</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>2025 年時，我認為工程師的重心會從「把程式碼寫出來」轉向驗證、架構與需求理解。到了 2026 年，我還是認同這個方向，但多了一層體會：<strong>使用 AI 越來越像是在跟人合作</strong>。理解它的邊界、定義清楚的完成條件、給它驗證機制，最後 Prompt Engineering 可能會變成 AI Management。而在 AI 變強的同時，人也應該跟著變強。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="2025-年的觀察"><a href="#2025-年的觀察" class="headerlink" title="2025 年的觀察"></a>2025 年的觀察</h2><p>2025 年的時候，我曾經整理過一段自己對 AI 開發工具的看法。當時我觀察到，AI 已經可以做到很多原本需要工程師花時間處理的事情，例如：</p>
+<ul>
+<li>自動優化程式碼格式</li>
+<li>協助開發者分析問題、提供解法</li>
+<li>自動產生文件</li>
+<li>快速實作產品 Demo</li>
+<li>閱讀既有程式碼並協助開發</li>
+</ul>
+<p>那時候我的想法是：隨著 AI 的準確度與能力持續提高，工程師真正需要投入的地方，可能會慢慢從「把程式碼寫出來」，轉移到其他更高層次的事情——例如驗證 AI 產出的內容、理解系統架構、釐清商業需求，以及在短時間內消化大量資訊並做出判斷。</p>
+<p>現在回頭看，我還是認同這個方向。只是到了 2026 年，我對這件事情又多了一層理解：</p>
+<p><strong>使用 AI，其實越來越像是在跟人合作。</strong></p>
+<h2 id="AI-是工具，但要像理解協作者一樣去理解它"><a href="#AI-是工具，但要像理解協作者一樣去理解它" class="headerlink" title="AI 是工具，但要像理解協作者一樣去理解它"></a>AI 是工具，但要像理解協作者一樣去理解它</h2><p>以前我們使用工具，通常會期待它有相對固定的行為。Compiler 有 compiler 的規則，Database 有 database 的規則，Framework 也有清楚的 API 與使用方式。</p>
+<p>但 AI 不太一樣。不同模型之間，有非常明顯的能力差異：</p>
+<ul>
+<li>有些模型很會寫 Code。</li>
+<li>有些模型很適合閱讀大量程式碼。</li>
+<li>有些模型分析問題很強，但實際動手修改程式時不一定穩定。</li>
+<li>有些模型速度非常快，適合處理大量簡單任務。</li>
+<li>也有些模型比較慢，但適合做架構分析、規劃與複雜推理。</li>
+</ul>
+<p>甚至同一個模型，在不同類型的任務裡，表現可能差非常多。</p>
+<p>所以我現在比較不會先問「哪一個模型最強？」，反而習慣直接丟不同類型的問題給它處理，從它實際解題的過程中觀察它。例如：</p>
+<ul>
+<li>有些模型遇到複雜問題時，很會先拆解再處理。</li>
+<li>有些模型寫 Code 很快，但容易忽略邊界條件。</li>
+<li>有些模型很適合閱讀大量 Context。</li>
+<li>有些模型一旦卡住，就很容易在同一個方向反覆嘗試。</li>
+</ul>
+<p>這些特性，很多時候不是看 Benchmark 或模型介紹就能完全知道的，而是在實際合作幾次之後才會慢慢感受到。</p>
+<p>這其實也很像認識一個新的工作夥伴。你不一定一開始就知道對方擅長什麼，而是一起解過幾個問題、合作過幾次之後，才逐漸建立對他的理解。你會開始知道：</p>
+<ul>
+<li>什麼類型的問題可以直接交給它。</li>
+<li>什麼事情需要提供更多背景。</li>
+<li>什麼地方它容易漏掉。</li>
+<li>什麼情況下需要另外設計驗證方式。</li>
+<li>以及什麼時候應該換一種解法，甚至換另一個模型。</li>
+</ul>
+<p>所以對我來說，理解 AI 的方式並不是先替它貼上「適合做什麼」的標籤，而是：</p>
+<p><strong>先讓它解題，再從它怎麼解題，慢慢理解這個模型。</strong></p>
+<h2 id="使用-AI-的第一步，是理解它的邊界"><a href="#使用-AI-的第一步，是理解它的邊界" class="headerlink" title="使用 AI 的第一步，是理解它的邊界"></a>使用 AI 的第一步，是理解它的邊界</h2><p>我現在越來越覺得，一個模型「做不到什麼」，有時候比它「做得到什麼」更加重要。</p>
+<p>因為如果不知道模型的邊界，很容易發生一個情況：<strong>AI 已經開始鬼打牆了，但人還是一直叫它繼續。</strong></p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">再修一次。<br>還是不對，再檢查。<br>繼續。<br></code></pre></td></tr></table></figure>
+
+<p>最後 AI 可能只是用不同的方法，重複犯同一個錯。</p>
+<p>這時候真正需要做的事情，通常不是繼續 Prompt，而是重新思考：它到底缺少什麼？</p>
+<ul>
+<li>是缺少 Context？</li>
+<li>是不知道成功條件？</li>
+<li>是沒有辦法執行驗證？</li>
+<li>還是這個問題根本就不適合交給這個模型？</li>
+</ul>
+<p>這其實也是在跟人合作時非常常見的事情。如果一個同事一直沒有完成你期待的成果，問題不一定只是執行力。有時候是需求本身沒有說清楚，有時候是資訊不足，有時候是工作分配錯了。</p>
+<p>AI 也是一樣。</p>
+<h2 id="清楚描述目標，比告訴-AI-怎麼做更重要"><a href="#清楚描述目標，比告訴-AI-怎麼做更重要" class="headerlink" title="清楚描述目標，比告訴 AI 怎麼做更重要"></a>清楚描述目標，比告訴 AI 怎麼做更重要</h2><p>我以前在使用 AI 時，也很容易陷入一件事情：把 Prompt 寫得非常詳細，一步一步告訴 AI「先做 A，再做 B，接著做 C」。</p>
+<p>但實際使用一段時間之後，我發現更重要的是另外一件事：<strong>你要非常清楚自己最後想得到什麼。</strong></p>
+<p>例如與其說：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">幫我重構這段程式碼。<br></code></pre></td></tr></table></figure>
+
+<p>不如把目標講得更完整：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">我要讓這個 Controller 不再處理 Business Logic，所有 Domain Workflow 都進入 UseCase。<br>完成後 Controller 只負責 Request Validation、呼叫 UseCase 與回傳 Response。<br>原本測試必須全部通過，並補上缺少的 UseCase Test。<br></code></pre></td></tr></table></figure>
+
+<p>這兩個 Prompt 看起來只差一些描述，但對 AI 來說，後者多了一個非常重要的東西：<strong>Definition of Done</strong>。它知道什麼叫做「完成」。</p>
+<p>這其實跟帶人也很像。如果你只說「把這個做好」，最後每個人對「做好」的理解都可能不同。但如果你把目標、限制、驗收條件說清楚，合作成本會低很多。</p>
+<h2 id="AI-鬼打牆時，最有效的方法之一是給它驗證機制"><a href="#AI-鬼打牆時，最有效的方法之一是給它驗證機制" class="headerlink" title="AI 鬼打牆時，最有效的方法之一是給它驗證機制"></a>AI 鬼打牆時，最有效的方法之一是給它驗證機制</h2><p>這也是我最近很明顯的一個體會。</p>
+<p>如果你只是叫 AI「把這個 Bug 修好」，AI 很容易修改一段程式碼之後就說「已修正」。但**「程式碼被修改」跟「Bug 被修正」其實是兩件不同的事情。**</p>
+<p>所以我現在會越來越在意一件事：我要怎麼讓 AI 自己證明這件事情完成了？例如：</p>
+<ul>
+<li>跑 Unit Test</li>
+<li>跑 Integration Test</li>
+<li>執行指定 SQL 驗證結果</li>
+<li>實際打 API</li>
+<li>啟動 Browser 測試 UI</li>
+<li>檢查 Screenshot</li>
+<li>比較資料筆數</li>
+<li>提供明確的 Acceptance Criteria</li>
+</ul>
+<p>這時候 AI 的工作流程就會從：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">理解問題 → 修改程式碼<br></code></pre></td></tr></table></figure>
+
+<p>變成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">理解問題 → 修改程式碼 → 執行驗證 → 發現問題 → 再修改 → 再驗證<br></code></pre></td></tr></table></figure>
+
+<p>這個差異非常大。因為 AI 開始有自己的 <strong>Feedback Loop</strong>，而不是每做一步都需要人類告訴它「這個不對，再來一次」。</p>
+<p>很多時候，我覺得不是模型本身不夠強，而是<strong>我們沒有提供它一個能判斷自己是否完成的環境</strong>。</p>
+<p>這個做法我在兩次實戰裡都用過。<a href="/2026/09/20/ai-agent-mysql-ddl-verification/" title="用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告">用 AI Agent 加速驗證 MySQL DDL</a> 時，我不問 agent「這個 ALTER 有沒有鎖表」，而是讓它在背景開寫入探針，用探針的延遲數字當作證據；<a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">Dead Code 清理實戰</a> 時，則是要求 AI 產出風險報告，再安排三個獨立的 adversarial 驗證去找它刪錯的地方。兩次得到的結論都一樣：<strong>AI 負責舉證，人負責判決。</strong></p>
+<h2 id="Prompt-Engineering-最後可能會變成-AI-Management"><a href="#Prompt-Engineering-最後可能會變成-AI-Management" class="headerlink" title="Prompt Engineering 最後可能會變成 AI Management"></a>Prompt Engineering 最後可能會變成 AI Management</h2><p>所以現在我對「Prompt Engineering」這件事情的看法也有一些改變。</p>
+<p>早期大家很在意的是：Prompt 要怎麼寫？哪一個關鍵字效果比較好？要不要指定角色？要不要把步驟寫得更細？</p>
+<p>但隨著模型本身的理解能力越來越強，我覺得未來真正重要的能力可能不只是 Prompt，而是：<strong>你能不能管理 AI 的工作。</strong></p>
+<p>這包含很多事情，例如：</p>
+<ul>
+<li>知道什麼任務應該交給哪一個模型。</li>
+<li>知道一個大型任務應該怎麼拆。</li>
+<li>提供足夠的 Context。</li>
+<li>定義清楚的成功條件。</li>
+<li>建立驗證機制。</li>
+<li>知道什麼時候 AI 已經偏離方向。</li>
+<li>知道什麼事情可以授權，什麼事情必須人工確認。</li>
+<li>甚至知道一個 AI 卡住時，是應該繼續補充資訊，還是乾脆換另一個 AI。</li>
+</ul>
+<p>這些事情其實跟管理一個團隊非常像。差別只是這個團隊裡面的成員，不一定全部都是人。</p>
+<h2 id="從一個-AI，到一個-AI-Team"><a href="#從一個-AI，到一個-AI-Team" class="headerlink" title="從一個 AI，到一個 AI Team"></a>從一個 AI，到一個 AI Team</h2><p>我現在自己的工作流程，也開始慢慢變成這樣：</p>
+<ul>
+<li>有些 AI 負責 Coding。</li>
+<li>有些負責 Code Review。</li>
+<li>有些負責分析 Repository。</li>
+<li>有些負責整理 Trello Card。</li>
+<li>有些負責整理 Release Note。</li>
+<li>有些負責前期研究與架構規劃。</li>
+</ul>
+<p>最後我做的事情，開始不一定是親自完成所有 Implementation，反而更像是在做：拆問題、決定優先順序、提供 Context、確認 Trade-off、驗證結果，以及處理 AI 無法判斷的事情。</p>
+<p>如果使用方式再成熟一點，一個工程師實際上可能不是只有「一個 AI 助手」，而是<strong>一個小型 AI Team</strong>。工程師則逐漸變成這個 Team 的協作者、Reviewer，甚至某種程度上的 Tech Lead。</p>
+<h2 id="在交給-AI-Team-之前，先讓-AI-放大你自己"><a href="#在交給-AI-Team-之前，先讓-AI-放大你自己" class="headerlink" title="在交給 AI Team 之前，先讓 AI 放大你自己"></a>在交給 AI Team 之前，先讓 AI 放大你自己</h2><p>不過，AI Team 的 Workflow 不是一開始就會成型的。</p>
+<p>尤其當你的驗證模式還沒有很成熟、系統架構也很混亂的時候，我不建議把事情全部都交給 AI 執行。因為 <strong>codebase 就相當於 AI 的大腦</strong>。在架構混亂、規則不明，驗證的配套措施也還沒做好之前，全然讓 AI 自由發揮，只會加速垃圾的產出、加速混亂，最終導致專案的成果無法掌握。</p>
+<p>這也是我在 <a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">Dead Code 清理實戰</a> 裡實際遇到的問題：專案裡留著「看起來可用」的舊元件時，AI agent 會誤以為它們仍在使用而跟著修改。先把大腦裡的雜訊清掉，AI 才有機會產出可靠的結果。</p>
+<p>我也不推薦全然相信 AI，自己卻不驗證、不思考。如果把思考、歸納、總結與分析的能力全部外包給 AI，你對做出來的東西理解度會很低，也很難控制；而且久了之後，自己的思維靈敏度也會跟著降低。</p>
+<p>我比較推薦的是：<strong>AI 變強的同時，人也應該跟著變強。</strong></p>
+<p>所以在 AI Team 的 Workflow 成型之前，可以先讓 AI 變成你的手腳：</p>
+<ul>
+<li>加速你搜集資料的速度。</li>
+<li>加速你規劃、統整與分析的速度。</li>
+<li>加速你驗證的速度。</li>
+<li>加速你決策與執行的速度。</li>
+<li>加速你思考的速度。</li>
+</ul>
+<p>重點是「加速」，而不是「取代」。判斷與理解仍然留在自己身上，AI 負責的是把這些能力放大。</p>
+<p>同時，也要把自己的決策能力放在更高價值的項目上。簡單的功能可以外包給 AI，影響性低的調整也可以外包；但自己真正該持續投入的，是<strong>打磨對產品的敏銳度，並提高決策品質</strong>。</p>
+<p>之後再把這些經驗慢慢整理成一個一個區塊，<strong>拼出適合自己工作模式的拼圖</strong>，最後再把這套方法賦能給團隊。</p>
+<p>說到底，AI 本質上仍然是工具。就像汽車跟電腦一樣，它是達成你想實現的目標的其中一個手段，是讓人突破人體限制的一個輔助工具。</p>
+<h2 id="把這些觀念串起來"><a href="#把這些觀念串起來" class="headerlink" title="把這些觀念串起來"></a>把這些觀念串起來</h2><p>如果把上面提到的觀念畫成一張圖，大概會是這個樣子：</p>
+
+<pre>
+<code class="mermaid" >
+flowchart TD
+    A["釐清問題與商業需求"] --> B["拆解任務、決定優先順序"]
+    B --> C["定義目標與 Definition of Done"]
+    C --> D{"適合交給 AI 嗎？<br/>影響性 / 模型邊界<br/>驗證是否到位"}
+    D -->|"簡單功能、影響性低<br/>且能驗證"| T["AI Team 執行任務<br/>Coding / Code Review<br/>Repository 分析 / 架構規劃"]
+    D -->|"高價值決策、架構混亂<br/>或還無法驗證"| M["工程師主導<br/>AI 當手腳：<br/>搜集資料、分析、驗證"]
+    T --> V{"執行驗證<br/>Test / SQL / API / UI"}
+    M --> H
+
+    V -->|未通過| F["AI 自行修正"]
+    F -->|Feedback Loop| V
+    F -. "反覆失敗、開始鬼打牆" .-> R["工程師重新判斷：<br/>缺 Context？缺成功條件？<br/>無法驗證？模型不適合？"]
+    R -->|"補充資訊 / 調整目標 / 換模型"| C
+
+    V -->|通過| H["工程師 Review：<br/>正確性、Trade-off、價值"]
+    H --> Z(["完成真正有價值的工作"])
+
+    classDef human fill:#e8f1ff,stroke:#3b82f6,color:#1e3a8a
+    classDef ai fill:#ecfdf5,stroke:#10b981,color:#064e3b
+    classDef check fill:#fff7ed,stroke:#f97316,color:#7c2d12
+    classDef done fill:#f5f3ff,stroke:#8b5cf6,color:#4c1d95
+    class A,B,C,R,H,M human
+    class T,F ai
+    class D,V check
+    class Z done
+</code>
+</pre>
+
+<p>藍色是工程師負責的部分，綠色是 AI 負責的部分，橘色則是決策與驗證的關卡。可以看到，工程師的工作集中在流程的兩端：<strong>前面定義問題與完成條件，後面判斷結果是否正確、是否有價值</strong>。</p>
+<p>中間的分派也不是什麼都丟給 AI Team：簡單、影響性低、而且能被驗證的任務，盡量讓 AI 在驗證機制裡自己跑 Feedback Loop，只有當它開始鬼打牆時，工程師才需要介入，重新檢查是缺了什麼；高價值的決策、架構還很混亂，或還沒有驗證機制的部分，則由工程師主導，讓 AI 當手腳加速。</p>
+<h2 id="那工程師是不是會被取代？"><a href="#那工程師是不是會被取代？" class="headerlink" title="那工程師是不是會被取代？"></a>那工程師是不是會被取代？</h2><p>這也是我自己曾經想過的問題。如果 AI 可以寫 Code、寫 Test、做 Review、產文件、分析架構，那工程師最後到底剩下什麼？</p>
+<p>目前我的看法是：<strong>「單純把需求轉換成程式碼」這件事情，價值確實會持續下降。</strong></p>
+<p>但軟體工程本來就不只是寫 Code。真正困難的問題通常是：</p>
+<ul>
+<li>我們到底要解決什麼？</li>
+<li>哪些功能現在應該做？哪些不用做？哪些可以晚點做？</li>
+<li>哪些技術債可以接受？哪些風險不能接受？</li>
+<li>兩個方案之間要怎麼做 Trade-off？</li>
+<li>這個需求對使用者真正的價值是什麼？</li>
+<li>系統三個月後、兩年後會變成什麼樣子？</li>
+</ul>
+<p>這些事情需要大量的 Context、判斷，以及對商業與系統的理解。而 AI 反而會讓這些能力變得更加重要。</p>
+<p>因為當「產生 Code」變便宜之後，真正稀缺的會變成：<strong>知道什麼值得做，以及知道做出來的東西到底對不對。</strong></p>
+<h2 id="回頭看-2025-年的判斷"><a href="#回頭看-2025-年的判斷" class="headerlink" title="回頭看 2025 年的判斷"></a>回頭看 2025 年的判斷</h2><p>2025 年的時候，我認為工程師應該減少「寫 Code」的比重，並寫下未來工程師需要：</p>
+<ol>
+<li>更強的獨立思考能力</li>
+<li>在短時間內消化大量資訊</li>
+<li>提供開發以外的額外價值，例如系統架構與需求掌握</li>
+</ol>
+<p>現在回頭看，我覺得這些判斷沒有太大的改變。但我會再補上一個：<strong>管理 AI 協作者的能力。</strong></p>
+<p>因為未來一個工程師能產生多少成果，很可能不再完全取決於自己一個小時能寫多少 Code，而是：</p>
+<ul>
+<li>他能同時推動多少個 AI Workflow。</li>
+<li>能不能快速判斷 AI 的成果是否正確。</li>
+<li>能不能把模糊需求轉換成可以執行的工作。</li>
+<li>能不能建立一套讓 AI 自己驗證成果的機制。</li>
+<li>能不能知道什麼時候應該相信 AI，什麼時候應該自己接手。</li>
+</ul>
+<h2 id="結論：從「會寫-Code」到「讓事情發生」"><a href="#結論：從「會寫-Code」到「讓事情發生」" class="headerlink" title="結論：從「會寫 Code」到「讓事情發生」"></a>結論：從「會寫 Code」到「讓事情發生」</h2><p>我在 2025 年的時候寫過一句話：</p>
+<blockquote>
+<p>人人都會寫 Code 的時代不是未來式，而是現在進行式。</p>
+</blockquote>
+<p>現在我可能會把它改成：</p>
+<blockquote>
+<p>人人都能產生 Code，正在逐漸變成基本能力。</p>
+</blockquote>
+<p>下一階段真正拉開差距的，是<strong>誰能讓 AI 穩定地完成真正有價值的工作</strong>。</p>
+<p>所以我現在越來越覺得，未來工程師的核心能力可能不會只是 Coding，而是：理解問題、做出判斷、組織資訊、拆解任務、管理協作者，以及驗證成果。</p>
+<p>所以 AI 到底是工具，還是協作者？我現在的答案是：<strong>它是工具，但要用管理協作者的方式去用它。</strong></p>
+<p>它的本質是幫你達成目標的工具，但它的行為不像 Compiler 那樣固定，所以你需要像對待協作者一樣去理解它的能力與邊界、交代清楚目標、建立驗證機制。它可以是一個助手、一個工作夥伴，甚至是一整個團隊；但目標、判斷與最後的責任，始終在使用它的人身上。</p>
+<p>最後差別可能不在於你「有沒有使用 AI」，而在於：<strong>你知不知道怎麼跟它一起工作，以及你知不知道怎麼用它來放大你的能力。</strong></p>
+<hr>
+<p>這篇提到的觀念，實際落地的過程寫在：<a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">Dead Code 清理實戰</a>、<a href="/2026/09/20/ai-agent-mysql-ddl-verification/" title="用 AI Agent 加速驗證 MySQL DDL：從一段 prompt 到可重現的實測報告">用 AI Agent 加速驗證 MySQL DDL</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E9%9A%A8%E7%AD%86/" class="category-chain-item">隨筆</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E9%9A%A8%E7%AD%86/%E7%94%A2%E6%A5%AD%E8%A7%80%E5%AF%9F/" class="category-chain-item">產業觀察</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/AI-Agent/" class="print-no-link">#AI Agent</a>
+      
+        <a href="/tags/AI/" class="print-no-link">#AI</a>
+      
+        <a href="/tags/Prompt-Engineering/" class="print-no-link">#Prompt Engineering</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%B8%AB%E8%81%B7%E6%B6%AF/" class="print-no-link">#工程師職涯</a>
+      
+        <a href="/tags/%E8%BB%9F%E9%AB%94%E5%B7%A5%E7%A8%8B/" class="print-no-link">#軟體工程</a>
+      
+        <a href="/tags/%E5%80%8B%E4%BA%BA%E8%A7%80%E9%BB%9E/" class="print-no-link">#個人觀點</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>從 AI 寫 Code 到管理 AI：我這兩年對工程師角色變化的觀察</div>
+      <div>https://jh0712.github.io/2026/10/12/from-ai-coding-to-ai-management/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年10月12日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/11/future-of-traditional-news-media/" title="社群媒體加上 AI 之後，我們還需要傳統新聞媒體嗎？">
+                        <span class="hidden-mobile">社群媒體加上 AI 之後，我們還需要傳統新聞媒體嗎？</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>

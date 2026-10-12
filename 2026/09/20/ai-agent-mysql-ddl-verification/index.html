@@ -27,13 +27,13 @@
 <meta property="og:description" content="「大表加欄位會鎖表」這種問題，真要驗證是很痛的：要準備 100 萬筆資料、要跑十幾個情境、其中好幾個單一 ALTER 就跑一兩個小時，而且你得全程盯著寫入有沒有被擋。光是最後報告裡那幾個大 ALTER 的實測時間加起來就超過 4.5 小時，還不含灌資料。這種「大量等待 + 機械操作 + 但需要判斷」的任務，正好是 AI agent 最划算的應用場景。這篇不談 MySQL 的結論（那在 另一篇），">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2026-09-20T06:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-11T15:40:55.684Z">
+<meta property="article:modified_time" content="2026-10-12T17:40:40.190Z">
 <meta property="article:author" content="Kite">
 <meta property="article:tag" content="AI Agent">
-<meta property="article:tag" content="工程實踐">
 <meta property="article:tag" content="MySQL">
 <meta property="article:tag" content="DDL">
 <meta property="article:tag" content="Prompt">
+<meta property="article:tag" content="工程實踐">
 <meta name="twitter:card" content="summary_large_image">
   
   
@@ -356,7 +356,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.5k 字
+          5.6k 字
         
       </span>
     
@@ -501,6 +501,7 @@
 <hr>
 <p>這輪測試的完整結論（哪些 DDL 會鎖表、耗時多久、給 Laravel migration 的建議）寫在：<a href="/2026/09/20/mysql-large-table-ddl-lock-benchmark/" title="MySQL 大表 DDL 實測：哪些操作會鎖表、哪些會讓你等一小時">MySQL 大表 DDL 實測</a></p>
 <p>相關：<a href="/2026/07/26/dead-code-cleanup-in-practice/" title="Dead Code 清理實戰：如何安全刪除一萬四千行程式碼">Dead Code 清理實戰</a>、<a href="/2026/07/31/claude-code-ultracode-workflow-review/" title="Claude Code ultracode workflow 實測心得：一整隊 agent 幫我寫 API 文件，值得嗎？">Claude Code ultracode workflow 實測心得</a></p>
+<p>這種「AI 負責舉證，人負責判決」的分工，後來我整理成對工程師角色變化的觀察：<a href="/2026/10/12/from-ai-coding-to-ai-management/" title="從 AI 寫 Code 到管理 AI：我這兩年對工程師角色變化的觀察">從 AI 寫 Code 到管理 AI</a></p>
 
                 
               </div>
@@ -543,13 +544,13 @@
       
         <a href="/tags/AI-Agent/" class="print-no-link">#AI Agent</a>
       
-        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
-      
         <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
       
         <a href="/tags/DDL/" class="print-no-link">#DDL</a>
       
         <a href="/tags/Prompt/" class="print-no-link">#Prompt</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
       
     </div>
   
