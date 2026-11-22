@@ -1,0 +1,1153 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="這是「前端改版實戰」系列的最後一篇。前四篇講 Remote Hunter 改版的過程、取捨、挑戰與 AI 的用法，這篇把過程中值得記下來的四個技術點整理成可以直接參考的做法：用 rewrite 讓新舊頁面共用同一個 URL、用 Tailwind v4 建立 design token、用 headless hooks 讓一套邏輯服務多個畫面，以及怎麼量測一次前端重構的成效。 系列文章：（一）整個過">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法">
+<meta property="og:url" content="https://jh0712.github.io/2026/11/22/frontend-redesign-05-tech-notes/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="這是「前端改版實戰」系列的最後一篇。前四篇講 Remote Hunter 改版的過程、取捨、挑戰與 AI 的用法，這篇把過程中值得記下來的四個技術點整理成可以直接參考的做法：用 rewrite 讓新舊頁面共用同一個 URL、用 Tailwind v4 建立 design token、用 headless hooks 讓一套邏輯服務多個畫面，以及怎麼量測一次前端重構的成效。 系列文章：（一）整個過">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-11-22T02:50:00.000Z">
+<meta property="article:modified_time" content="2026-11-22T04:57:44.343Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="工程實踐">
+<meta property="article:tag" content="Next.js">
+<meta property="article:tag" content="前端改版實戰">
+<meta property="article:tag" content="Tailwind CSS">
+<meta property="article:tag" content="效能量測">
+<meta property="article:tag" content="React Hooks">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法 - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-22 10:50" pubdate>
+          2026年11月22日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          18k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          152 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>這是「前端改版實戰」系列的最後一篇。前四篇講 Remote Hunter 改版的過程、取捨、挑戰與 AI 的用法，這篇把過程中值得記下來的四個技術點整理成可以直接參考的做法：用 rewrite 讓新舊頁面共用同一個 URL、用 Tailwind v4 建立 design token、用 headless hooks 讓一套邏輯服務多個畫面，以及怎麼量測一次前端重構的成效。</p>
+<p>系列文章：<a href="/2026/11/22/frontend-redesign-01-overview/" title="前端改版實戰（一）：19 個頁面、六週，從 Bootstrap 大雜燴到 Design System">（一）整個過程</a>、<a href="/2026/11/22/frontend-redesign-02-trade-offs/" title="前端改版實戰（二）：Trade-off，這次改版我放棄了什麼">（二）Trade-off</a>、<a href="/2026/11/22/frontend-redesign-03-challenges/" title="前端改版實戰（三）：挑戰與解法，從 CSS 耦合到量測後才發現的效能陷阱">（三）挑戰與解法</a>、<a href="/2026/11/22/frontend-redesign-04-ai/" title="前端改版實戰（四）：我怎麼用 AI 加速一個 19 頁的前端改版">（四）用 AI 加速</a>、（五）技術補充</p>
+</blockquote>
+<span id="more"></span>
+
+<blockquote>
+<p>本文的程式碼都是為了說明而重寫的最小範例，不是 production code。</p>
+</blockquote>
+<h2 id="一、用-rewrite-讓新舊頁面共用同一個-URL"><a href="#一、用-rewrite-讓新舊頁面共用同一個-URL" class="headerlink" title="一、用 rewrite 讓新舊頁面共用同一個 URL"></a>一、用 rewrite 讓新舊頁面共用同一個 URL</h2><h3 id="結構"><a href="#結構" class="headerlink" title="結構"></a>結構</h3><p>為什麼不用 page 內 if&#x2F;else 或兩個 route group，第二篇已經討論過。這裡直接看做法：<strong>新版頁面放在真實的 <code>/v2</code> 路徑底下，擁有自己的 root layout；由 middleware 依條件把 <code>/jobs</code> 內部改寫到 <code>/v2/jobs</code></strong>。瀏覽器網址列永遠顯示 <code>/jobs</code>。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs text">app/<br>├── (legacy)/              # 舊版頁面，舊版 root layout<br>│   ├── layout.tsx         # 載入 Bootstrap、舊 UI library、SCSS<br>│   └── jobs/page.tsx<br>└── v2/                    # 新版頁面，真實的路徑 segment<br>    ├── layout.tsx         # 新版 root layout，只載入新版 Tailwind 入口<br>    ├── (marketing)/       # 訪客頁的外框<br>    ├── (app)/             # 登入後頁面的外框（側欄、header）<br>    └── (shared)/          # 同一個 URL 同時服務訪客與會員<br>        └── jobs/page.tsx<br></code></pre></td></tr></table></figure>
+
+<h3 id="決策邏輯"><a href="#決策邏輯" class="headerlink" title="決策邏輯"></a>決策邏輯</h3><p>每個請求進來時，middleware 依固定的順序決定要走哪一版。順序很重要：越前面的規則優先權越高。</p>
+<pre><code class=" mermaid">flowchart TD
+    R[&quot;請求 /jobs&quot;] --&gt; A&#123;&quot;這個 route 的舊版&lt;br/&gt;已經刪除了？&quot;&#125;
+    A -- &quot;是&quot; --&gt; NEW[&quot;新版&quot;]
+    A -- &quot;否&quot; --&gt; B&#123;&quot;內部人員&lt;br/&gt;強制走舊版？&quot;&#125;
+    B -- &quot;是&quot; --&gt; OLD[&quot;舊版&quot;]
+    B -- &quot;否&quot; --&gt; C&#123;&quot;全站 kill switch&lt;br/&gt;關閉了？&quot;&#125;
+    C -- &quot;是&quot; --&gt; OLD
+    C -- &quot;否&quot; --&gt; D&#123;&quot;這個 route 在&lt;br/&gt;新版清單裡？&quot;&#125;
+    D -- &quot;否&quot; --&gt; OLD
+    D -- &quot;是&quot; --&gt; E&#123;&quot;內部人員&lt;br/&gt;強制走新版？&quot;&#125;
+    E -- &quot;是&quot; --&gt; NEW
+    E -- &quot;否&quot; --&gt; F&#123;&quot;已登入？&quot;&#125;
+    F -- &quot;是&quot; --&gt; NEW
+    F -- &quot;否&quot; --&gt; G&#123;&quot;這個 route 開放給訪客&lt;br/&gt;且訪客 flag 開啟？&quot;&#125;
+    G -- &quot;是&quot; --&gt; NEW
+    G -- &quot;否&quot; --&gt; OLD
+</code></pre>
+
+<p>幾個設計上的考量：</p>
+<ul>
+<li><strong>「舊版已刪除」排第一</strong>：舊版程式碼已經不存在時，任何 flag 都不能把請求導回舊版，否則會 404。這時的 rollback 只能靠 git revert</li>
+<li><strong>「強制舊版」排第二</strong>：只要舊版還在，不管其他 flag 怎麼設，內部人員都能立刻看到舊版，重現使用者回報的問題</li>
+<li><strong>訪客和會員分開放量</strong>：登入後的頁面先上，訪客頁面另外用一個 flag 控制，風險比較好管理</li>
+</ul>
+<h3 id="程式碼範例"><a href="#程式碼範例" class="headerlink" title="程式碼範例"></a>程式碼範例</h3><p>Next.js 16 起，<code>middleware.ts</code> 改名為 <code>proxy.ts</code>，用法幾乎相同（export 的函式名改成 <code>proxy</code>，只跑在 Node.js runtime）：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// lib/new-design/routes.ts</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">type</span> <span class="hljs-title class_">NewDesignRoute</span> = &#123;<br>  <span class="hljs-attr">path</span>: <span class="hljs-built_in">string</span>;<br>  <span class="hljs-attr">audience</span>: <span class="hljs-string">&#x27;member&#x27;</span> | <span class="hljs-string">&#x27;everyone&#x27;</span>;  <span class="hljs-comment">// 只給會員，或訪客與會員都適用</span><br>  <span class="hljs-attr">oldVersionDeleted</span>?: <span class="hljs-built_in">boolean</span>;      <span class="hljs-comment">// 舊版已刪除，不能再切回去</span><br>&#125;;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> <span class="hljs-attr">NEW_DESIGN_ROUTES</span>: <span class="hljs-title class_">NewDesignRoute</span>[] = [<br>  &#123; <span class="hljs-attr">path</span>: <span class="hljs-string">&#x27;/&#x27;</span>, <span class="hljs-attr">audience</span>: <span class="hljs-string">&#x27;everyone&#x27;</span> &#125;,<br>  &#123; <span class="hljs-attr">path</span>: <span class="hljs-string">&#x27;/jobs&#x27;</span>, <span class="hljs-attr">audience</span>: <span class="hljs-string">&#x27;everyone&#x27;</span> &#125;,<br>  &#123; <span class="hljs-attr">path</span>: <span class="hljs-string">&#x27;/dashboard&#x27;</span>, <span class="hljs-attr">audience</span>: <span class="hljs-string">&#x27;member&#x27;</span>, <span class="hljs-attr">oldVersionDeleted</span>: <span class="hljs-literal">true</span> &#125;,<br>];<br></code></pre></td></tr></table></figure>
+
+<p><code>NEW_DESIGN_ROUTES</code> 只是一份清單，真正用到它的是 <code>shouldUseNewDesign</code>：把上面那張決策圖照順序寫成程式碼，每一步對應圖上的一個判斷。</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// lib/new-design/should-use-new-design.ts</span><br><span class="hljs-keyword">import</span> <span class="hljs-keyword">type</span> &#123; <span class="hljs-title class_">NextRequest</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;next/server&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; <span class="hljs-variable constant_">NEW_DESIGN_ROUTES</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./routes&#x27;</span>;<br><br><span class="hljs-comment">// 內部人員用 ?ui=legacy 或 ?ui=new 強制切換版本</span><br><span class="hljs-keyword">function</span> <span class="hljs-title function_">readOverride</span>(<span class="hljs-params"><span class="hljs-attr">request</span>: <span class="hljs-title class_">NextRequest</span></span>): <span class="hljs-string">&#x27;legacy&#x27;</span> | <span class="hljs-string">&#x27;new&#x27;</span> | <span class="hljs-literal">null</span> &#123;<br>  <span class="hljs-keyword">const</span> value = request.<span class="hljs-property">nextUrl</span>.<span class="hljs-property">searchParams</span>.<span class="hljs-title function_">get</span>(<span class="hljs-string">&#x27;ui&#x27;</span>) ?? request.<span class="hljs-property">cookies</span>.<span class="hljs-title function_">get</span>(<span class="hljs-string">&#x27;ui&#x27;</span>)?.<span class="hljs-property">value</span>;<br>  <span class="hljs-keyword">return</span> value === <span class="hljs-string">&#x27;legacy&#x27;</span> || value === <span class="hljs-string">&#x27;new&#x27;</span> ? value : <span class="hljs-literal">null</span>;<br>&#125;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">shouldUseNewDesign</span>(<span class="hljs-params"><span class="hljs-attr">request</span>: <span class="hljs-title class_">NextRequest</span></span>): <span class="hljs-built_in">boolean</span> &#123;<br>  <span class="hljs-keyword">const</span> &#123; pathname &#125; = request.<span class="hljs-property">nextUrl</span>;<br>  <span class="hljs-keyword">const</span> route = <span class="hljs-variable constant_">NEW_DESIGN_ROUTES</span>.<span class="hljs-title function_">find</span>(<span class="hljs-function">(<span class="hljs-params">r</span>) =&gt;</span> r.<span class="hljs-property">path</span> === pathname);<br>  <span class="hljs-keyword">const</span> <span class="hljs-keyword">override</span> = <span class="hljs-title function_">readOverride</span>(request);<br><br>  <span class="hljs-comment">// 1. 舊版已刪除：一律走新版，任何 flag 都不能切回去</span><br>  <span class="hljs-keyword">if</span> (route?.<span class="hljs-property">oldVersionDeleted</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>  <span class="hljs-comment">// 2. 內部人員強制走舊版</span><br>  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">override</span> === <span class="hljs-string">&#x27;legacy&#x27;</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>  <span class="hljs-comment">// 3. 全站 kill switch 關閉</span><br>  <span class="hljs-keyword">if</span> (process.<span class="hljs-property">env</span>.<span class="hljs-property">NEW_DESIGN_ENABLED</span> !== <span class="hljs-string">&#x27;true&#x27;</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>  <span class="hljs-comment">// 4. 不在清單裡的 route，還沒有新版</span><br>  <span class="hljs-keyword">if</span> (!route) <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>  <span class="hljs-comment">// 5. 內部人員強制走新版</span><br>  <span class="hljs-keyword">if</span> (<span class="hljs-keyword">override</span> === <span class="hljs-string">&#x27;new&#x27;</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>  <span class="hljs-comment">// 6. 已登入：走新版</span><br>  <span class="hljs-keyword">if</span> (request.<span class="hljs-property">cookies</span>.<span class="hljs-title function_">has</span>(<span class="hljs-string">&#x27;session&#x27;</span>)) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>  <span class="hljs-comment">// 7. 訪客：這個 route 要開放給訪客，而且訪客 flag 開啟</span><br>  <span class="hljs-keyword">return</span> route.<span class="hljs-property">audience</span> === <span class="hljs-string">&#x27;everyone&#x27;</span> &amp;&amp; process.<span class="hljs-property">env</span>.<span class="hljs-property">NEW_DESIGN_GUEST_ENABLED</span> === <span class="hljs-string">&#x27;true&#x27;</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>幾個範例省略的細節：</p>
+<ul>
+<li><code>?ui=</code> 的值會由 proxy 寫進 session cookie，站內換頁時才會維持同一版，關掉瀏覽器就失效</li>
+<li>這裡只做完全比對；實際上還要處理子路徑（例如 <code>/jobs/123</code> 也歸 <code>/jobs</code> 管）和結尾斜線</li>
+<li>「已登入」實際上要驗證 token 是否有效、是否過期，不能只看 cookie 在不在</li>
+</ul>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// proxy.ts</span><br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">NextResponse</span>, <span class="hljs-keyword">type</span> <span class="hljs-title class_">NextRequest</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;next/server&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; shouldUseNewDesign &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./lib/new-design/should-use-new-design&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">proxy</span>(<span class="hljs-params"><span class="hljs-attr">request</span>: <span class="hljs-title class_">NextRequest</span></span>) &#123;<br>  <span class="hljs-keyword">const</span> &#123; pathname &#125; = request.<span class="hljs-property">nextUrl</span>;<br><br>  <span class="hljs-comment">// 直接打 /v2 的請求，導回乾淨的路徑，並告訴搜尋引擎不要收錄</span><br>  <span class="hljs-keyword">if</span> (pathname === <span class="hljs-string">&#x27;/v2&#x27;</span> || pathname.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&#x27;/v2/&#x27;</span>)) &#123;<br>    <span class="hljs-keyword">const</span> url = request.<span class="hljs-property">nextUrl</span>.<span class="hljs-title function_">clone</span>();<br>    url.<span class="hljs-property">pathname</span> = pathname.<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/^\/v2/</span>, <span class="hljs-string">&#x27;&#x27;</span>) || <span class="hljs-string">&#x27;/&#x27;</span>;<br>    <span class="hljs-keyword">const</span> response = <span class="hljs-title class_">NextResponse</span>.<span class="hljs-title function_">redirect</span>(url, <span class="hljs-number">302</span>);<br>    response.<span class="hljs-property">headers</span>.<span class="hljs-title function_">set</span>(<span class="hljs-string">&#x27;X-Robots-Tag&#x27;</span>, <span class="hljs-string">&#x27;noindex&#x27;</span>);<br>    <span class="hljs-keyword">return</span> response;<br>  &#125;<br><br>  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">shouldUseNewDesign</span>(request)) &#123;<br>    <span class="hljs-keyword">const</span> url = request.<span class="hljs-property">nextUrl</span>.<span class="hljs-title function_">clone</span>();<br>    url.<span class="hljs-property">pathname</span> = pathname === <span class="hljs-string">&#x27;/&#x27;</span> ? <span class="hljs-string">&#x27;/v2&#x27;</span> : <span class="hljs-string">`/v2<span class="hljs-subst">$&#123;pathname&#125;</span>`</span>;<br>    <span class="hljs-keyword">return</span> <span class="hljs-title class_">NextResponse</span>.<span class="hljs-title function_">rewrite</span>(url);<br>  &#125;<br><br>  <span class="hljs-keyword">return</span> <span class="hljs-title class_">NextResponse</span>.<span class="hljs-title function_">next</span>();<br>&#125;<br><br><span class="hljs-comment">// 靜態資源不需要經過 proxy</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> config = &#123;<br>  <span class="hljs-attr">matcher</span>: [<span class="hljs-string">&#x27;/((?!_next/static|_next/image|favicon.ico).*)&#x27;</span>],<br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>這樣做的好處是：<strong>遷移一頁 &#x3D; 新增一個 <code>app/v2/.../page.tsx</code> + 在 route 清單加一行</strong>，不需要改環境變數或部署設定。rewrite 之後的請求不會再經過一次 proxy，所以不會有無限迴圈的問題。</p>
+<h3 id="一個請求實際怎麼走"><a href="#一個請求實際怎麼走" class="headerlink" title="一個請求實際怎麼走"></a>一個請求實際怎麼走</h3><p>把上面的程式碼串起來，使用者打開一個網址時有三種走法：</p>
+<pre><code class=" mermaid">sequenceDiagram
+    participant B as 瀏覽器
+    participant P as proxy
+    participant N as Next.js
+    alt 打開 /jobs，判定走新版
+        B-&gt;&gt;P: GET /jobs
+        P-&gt;&gt;P: shouldUseNewDesign 回傳 true
+        P-&gt;&gt;N: rewrite 成 /v2/jobs，只在 server 內部
+        N--&gt;&gt;B: 新版頁面的 HTML，網址列仍是 /jobs
+    else 打開 /jobs，判定走舊版
+        B-&gt;&gt;P: GET /jobs
+        P-&gt;&gt;N: 不改路徑，直接交給舊版頁面
+        N--&gt;&gt;B: 舊版頁面的 HTML
+    else 直接打 /v2/jobs
+        B-&gt;&gt;P: GET /v2/jobs
+        P--&gt;&gt;B: 302 導回 /jobs，加上 noindex
+        B-&gt;&gt;P: GET /jobs，重新走上面的流程
+    end
+</code></pre>
+
+<p>這裡要分清楚 rewrite 和 redirect：</p>
+<ul>
+<li><strong>redirect</strong>：告訴瀏覽器「去另一個網址」，瀏覽器會再發一次請求，網址列跟著變</li>
+<li><strong>rewrite</strong>：只發生在 server 內部，瀏覽器只發了一次請求，也不知道 <code>/v2</code> 存在</li>
+</ul>
+<p>正常的使用者只會走前兩條路。使用者分享出去、搜尋引擎收錄的網址永遠是 <code>/jobs</code>，<code>/v2</code> 只是 server 內部用來分開兩棵頁面樹的路徑。</p>
+<h3 id="路徑決定之後，畫面怎麼組出來"><a href="#路徑決定之後，畫面怎麼組出來" class="headerlink" title="路徑決定之後，畫面怎麼組出來"></a>路徑決定之後，畫面怎麼組出來</h3><p>proxy 只決定最後的路徑，不碰任何 component。拿到路徑之後，App Router 照檔案系統路由找出要 render 的 layout 和 page，由外往內一層一層套起來。route group 的 <code>(xxx)</code> 不會出現在網址裡，所以兩條路徑會對應到完全不同的兩組檔案：</p>
+<table>
+<thead>
+<tr>
+<th>最後的路徑</th>
+<th>root layout</th>
+<th>route group 的 layout</th>
+<th>page</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/jobs</code></td>
+<td><code>app/(legacy)/layout.tsx</code>，載入 Bootstrap、舊 UI library</td>
+<td>無</td>
+<td><code>app/(legacy)/jobs/page.tsx</code></td>
+</tr>
+<tr>
+<td><code>/v2/jobs</code></td>
+<td><code>app/v2/layout.tsx</code>，只載入新版 Tailwind</td>
+<td><code>app/v2/(shared)/layout.tsx</code></td>
+<td><code>app/v2/(shared)/jobs/page.tsx</code></td>
+</tr>
+</tbody></table>
+<p>新舊兩邊的 CSS 能完全分開，靠的就是這一層：兩條路徑從 root layout 開始就是不同的檔案。</p>
+<p><code>(shared)</code> 這一組要用同一個 URL 同時服務訪客和會員，所以它的 layout 會再做一次決定：在 server 端讀登入的 cookie，會員套 <code>(app)</code> 那套有左側側欄的外框，訪客套 <code>(marketing)</code> 那套有 header 和 footer 的外框。因為是在 server 端決定，第一幀就是正確的外框，不會先閃一下訪客版。訪客在頁面裡透過登入 modal 登入時不會整頁重新載入，所以 client 端的外框元件拿到登入狀態後，會自己切換成會員的外框。</p>
+<h3 id="陷阱：server-和瀏覽器的-pathname-不一樣"><a href="#陷阱：server-和瀏覽器的-pathname-不一樣" class="headerlink" title="陷阱：server 和瀏覽器的 pathname 不一樣"></a>陷阱：server 和瀏覽器的 pathname 不一樣</h3><p>使用者打開 <code>/jobs</code>、被 rewrite 到 <code>/v2/jobs</code> 之後，同一頁會出現兩個不同的 pathname：server 端 render 時，處理的是 rewrite 之後的路由，<code>usePathname()</code> 拿到 <code>/v2/jobs</code>；瀏覽器只知道自己打開的網址，hydration 時拿到 <code>/jobs</code>。這會造成兩個問題：</p>
+<ul>
+<li>用 pathname 決定畫面的元件（例如導覽列的 active 狀態）會 hydration mismatch</li>
+<li>pageview 事件送出 <code>/v2/jobs</code>，analytics 工具裡出現不存在的頁面</li>
+</ul>
+<p>解法是新版程式碼一律改用自訂的 hook：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// lib/new-design/useCleanPathname.ts</span><br><span class="hljs-string">&#x27;use client&#x27;</span>;<br><br><span class="hljs-keyword">import</span> &#123; usePathname &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;next/navigation&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">useCleanPathname</span>(<span class="hljs-params"></span>): <span class="hljs-built_in">string</span> &#123;<br>  <span class="hljs-keyword">const</span> pathname = <span class="hljs-title function_">usePathname</span>() ?? <span class="hljs-string">&#x27;/&#x27;</span>;<br>  <span class="hljs-keyword">return</span> pathname.<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/^\/v2(?=\/|$)/</span>, <span class="hljs-string">&#x27;&#x27;</span>) || <span class="hljs-string">&#x27;/&#x27;</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>凡是拿 pathname 來決定畫面、或把它送出去的地方，都改用這個 hook。專案裡主要有三類：</p>
+<ul>
+<li><strong>側欄、導覽列的 active 狀態</strong>：判斷目前在哪一頁，決定哪個項目要亮起來</li>
+<li><strong>tracking</strong>：pageview 和跟路由有關的 event，送出去的路徑要和使用者看到的網址一致</li>
+<li><strong>用 pathname 組網址</strong>：例如切換 tab 時，把目前的 pathname 加上 <code>?tab=...</code> 更新網址</li>
+</ul>
+<p>以側欄為例：</p>
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// components/app-shell/SidebarNav.tsx</span><br><span class="hljs-string">&#x27;use client&#x27;</span>;<br><br><span class="hljs-keyword">import</span> <span class="hljs-title class_">Link</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;next/link&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; useCleanPathname &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/lib/new-design/useCleanPathname&#x27;</span>;<br><br><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">NAV_ITEMS</span> = [<br>  &#123; <span class="hljs-attr">href</span>: <span class="hljs-string">&#x27;/dashboard&#x27;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&#x27;Dashboard&#x27;</span> &#125;,<br>  &#123; <span class="hljs-attr">href</span>: <span class="hljs-string">&#x27;/jobs&#x27;</span>, <span class="hljs-attr">label</span>: <span class="hljs-string">&#x27;Jobs&#x27;</span> &#125;,<br>];<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">SidebarNav</span>(<span class="hljs-params"></span>) &#123;<br>  <span class="hljs-comment">// server 和瀏覽器都拿到 /jobs</span><br>  <span class="hljs-keyword">const</span> pathname = <span class="hljs-title function_">useCleanPathname</span>();<br><br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">nav</span>&gt;</span></span><br><span class="language-xml">      &#123;NAV_ITEMS.map((item) =&gt; &#123;</span><br><span class="language-xml">        const active = pathname === item.href || pathname.startsWith(`$&#123;item.href&#125;/`);</span><br><span class="language-xml">        return (</span><br><span class="language-xml">          <span class="hljs-tag">&lt;<span class="hljs-name">Link</span> <span class="hljs-attr">key</span>=<span class="hljs-string">&#123;item.href&#125;</span> <span class="hljs-attr">href</span>=<span class="hljs-string">&#123;item.href&#125;</span> <span class="hljs-attr">aria-current</span>=<span class="hljs-string">&#123;active</span> ? &#x27;<span class="hljs-attr">page</span>&#x27; <span class="hljs-attr">:</span> <span class="hljs-attr">undefined</span>&#125;&gt;</span></span><br><span class="language-xml">            &#123;item.label&#125;</span><br><span class="language-xml">          <span class="hljs-tag">&lt;/<span class="hljs-name">Link</span>&gt;</span></span><br><span class="language-xml">        );</span><br><span class="language-xml">      &#125;)&#125;</span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">nav</span>&gt;</span></span><br>  );<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果這裡直接用 <code>usePathname()</code>，server render 時拿到 <code>/v2/jobs</code>，沒有任何項目亮起來；瀏覽器 hydration 時拿到 <code>/jobs</code>，Jobs 亮起來。兩邊產生的 HTML 不一樣，React 就會報 hydration mismatch。</p>
+<p>這個 hook 對舊版頁面沒有影響：舊版的路徑不會以 <code>/v2</code> 開頭，拿到的值和 <code>usePathname()</code> 完全一樣。所以新舊兩棵樹共用的 tracking 元件也能直接換成它，不用分兩種寫法。規則因此可以訂得很簡單：新版程式碼，以及新舊共用的元件，一律用這個 hook，不必逐一判斷哪個地方會出事。</p>
+<p>這條規則也寫進專案的 AI system prompt，避免 agent 開發新頁面時直接用 <code>usePathname()</code>。</p>
+<h2 id="二、用-Tailwind-v4-建立-design-token"><a href="#二、用-Tailwind-v4-建立-design-token" class="headerlink" title="二、用 Tailwind v4 建立 design token"></a>二、用 Tailwind v4 建立 design token</h2><h3 id="關掉預設尺度"><a href="#關掉預設尺度" class="headerlink" title="關掉預設尺度"></a>關掉預設尺度</h3><p>Tailwind 預設提供 <code>text-sm</code>、<code>text-lg</code>、<code>rounded-md</code> 這類尺度。問題是設計稿的字級和圓角是用像素定義的（13px、14px、12px 圓角），對應到 Tailwind 的預設尺度時，常常要猜「13px 是 <code>text-sm</code> 還是 <code>text-xs</code>」，最後每個人猜的不一樣，就回到舊系統 113 種字級的狀態。</p>
+<p>Tailwind v4 可以在 <code>@theme</code> 裡把預設尺度整組清掉，只留下設計稿定義的值：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-comment">/* styles/new-design.css */</span><br><span class="hljs-keyword">@import</span> <span class="hljs-string">&quot;tailwindcss&quot;</span>;<br><br><span class="hljs-keyword">@theme</span> &#123;<br>  <span class="hljs-comment">/* 清掉 Tailwind 預設的字級與圓角尺度 */</span><br>  <span class="hljs-attr">--text-</span>*: initial;<br>  <span class="hljs-attr">--radius-</span>*: initial;<br><br>  <span class="hljs-comment">/* 只保留設計稿定義的值，名稱直接用像素 */</span><br>  <span class="hljs-attr">--text-12</span>: <span class="hljs-number">12px</span>;<br>  <span class="hljs-attr">--text-13</span>: <span class="hljs-number">13px</span>;<br>  <span class="hljs-attr">--text-14</span>: <span class="hljs-number">14px</span>;<br>  <span class="hljs-attr">--text-16</span>: <span class="hljs-number">16px</span>;<br>  <span class="hljs-attr">--text-20</span>: <span class="hljs-number">20px</span>;<br><br>  <span class="hljs-attr">--radius-8</span>: <span class="hljs-number">8px</span>;<br>  <span class="hljs-attr">--radius-12</span>: <span class="hljs-number">12px</span>;<br>  <span class="hljs-attr">--radius-full</span>: <span class="hljs-number">9999px</span>;<br><br>  <span class="hljs-comment">/* 主色：保留成 runtime 變數，fallback 是預設值 */</span><br>  <span class="hljs-attr">--color-primary</span>: <span class="hljs-built_in">var</span>(--app-primary, <span class="hljs-number">#2f5bff</span>);<br>  <span class="hljs-attr">--color-primary-dark</span>: <span class="hljs-built_in">var</span>(--app-primary-dark, <span class="hljs-number">#1d3fd1</span>);<br><br>  <span class="hljs-comment">/* 斷點也依設計稿定義 */</span><br>  <span class="hljs-attr">--breakpoint-desktop</span>: <span class="hljs-number">900px</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>清掉之後，寫 <code>text-sm</code> 不會產生任何 CSS，只能用 <code>text-13</code>、<code>text-14</code>。這看起來很嚴格，但效果很明顯：新版頁面的唯一字級從 113 種收斂到 28 種。</p>
+<h3 id="主色在-server-端注入"><a href="#主色在-server-端注入" class="headerlink" title="主色在 server 端注入"></a>主色在 server 端注入</h3><p>所有 token 裡，只有主色有在 runtime 決定的需求。與其做一套完整的 ThemeProvider，我只讓主色那一族（主色、深色、淺色等變化）用 CSS variable 在 server 端注入，其他 token 在 build 時固定，也不需要任何 client JavaScript。做法是在 root layout 輸出一段 <code>&lt;style&gt;</code>：</p>
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// app/v2/layout.tsx</span><br><span class="hljs-keyword">import</span> <span class="hljs-string">&#x27;@/styles/new-design.css&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; primaryPalette <span class="hljs-keyword">as</span> palette &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/lib/theme&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">NewDesignRootLayout</span>(<span class="hljs-params">&#123;</span><br><span class="hljs-params">  children,</span><br><span class="hljs-params">&#125;: &#123;</span><br><span class="hljs-params">  children: React.ReactNode;</span><br><span class="hljs-params">&#125;</span>) &#123;<br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">&quot;en&quot;</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span></span><br><span class="language-xml">        <span class="hljs-tag">&lt;<span class="hljs-name">style</span>&gt;</span><span class="language-css">&#123;`<span class="hljs-selector-pseudo">:root</span>&#123;<span class="hljs-attr">--app-primary</span>:$&#123;palette<span class="hljs-selector-class">.primary</span>&#125;;<span class="hljs-attr">--app-primary-dark</span>:$&#123;palette<span class="hljs-selector-class">.primaryDark</span>&#125;;&#125;`&#125;</span><span class="hljs-tag">&lt;/<span class="hljs-name">style</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span>&#123;children&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span></span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span></span><br>  );<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>好處：</p>
+<ul>
+<li><strong>零 client JavaScript</strong>：不需要 ThemeProvider，也不需要 context</li>
+<li><strong>第一個畫面就是對的顏色</strong>：不會先閃一下預設色再換掉</li>
+<li><strong>新舊版本用同一份主色設定</strong>：有一個測試確認新舊頁面的主色一致，同一個顏色不會變成兩種藍</li>
+</ul>
+<h3 id="讓-cn-認得自訂的-token"><a href="#讓-cn-認得自訂的-token" class="headerlink" title="讓 cn() 認得自訂的 token"></a>讓 <code>cn()</code> 認得自訂的 token</h3><p>很多專案會用 <code>tailwind-merge</code> 搭配 <code>clsx</code> 寫一個 <code>cn()</code>，用來合併 class 並去掉衝突的 utility。問題是 <code>tailwind-merge</code> 不認得 <code>text-13</code> 這種自訂名稱：它會把 <code>text-13</code> 誤判成文字顏色，跟真正的顏色 class 互相覆蓋，字級就無聲地消失了：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-title function_">cn</span>(<span class="hljs-string">&#x27;text-13&#x27;</span>, <span class="hljs-string">&#x27;text-primary&#x27;</span>); <span class="hljs-comment">// 預期 &#x27;text-13 text-primary&#x27;，實際得到 &#x27;text-primary&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>解法是用 <code>extendTailwindMerge</code> 覆寫字級和圓角的 theme scale（以下為 tailwind-merge v3 的寫法）：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// lib/cn.ts</span><br><span class="hljs-keyword">import</span> &#123; clsx, <span class="hljs-keyword">type</span> <span class="hljs-title class_">ClassValue</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;clsx&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; extendTailwindMerge &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;tailwind-merge&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; fontSizeTokens, radiusTokens &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./design-tokens&#x27;</span>;<br><br><span class="hljs-keyword">const</span> twMerge = <span class="hljs-title function_">extendTailwindMerge</span>(&#123;<br>  <span class="hljs-attr">override</span>: &#123;<br>    <span class="hljs-attr">theme</span>: &#123;<br>      <span class="hljs-attr">text</span>: fontSizeTokens,   <span class="hljs-comment">// [&#x27;12&#x27;, &#x27;13&#x27;, &#x27;14&#x27;, &#x27;16&#x27;, &#x27;20&#x27;]</span><br>      <span class="hljs-attr">radius</span>: radiusTokens,   <span class="hljs-comment">// [&#x27;8&#x27;, &#x27;12&#x27;, &#x27;full&#x27;]</span><br>    &#125;,<br>  &#125;,<br>&#125;);<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">cn</span>(<span class="hljs-params">...<span class="hljs-attr">inputs</span>: <span class="hljs-title class_">ClassValue</span>[]</span>) &#123;<br>  <span class="hljs-keyword">return</span> <span class="hljs-title function_">twMerge</span>(<span class="hljs-title function_">clsx</span>(inputs));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>這樣 <code>cn(&#39;text-13&#39;, &#39;text-14&#39;)</code> 會正確留下 <code>text-14</code>，<code>rounded-t-8 rounded-t-12</code> 這類方向性的圓角也能正確去重。</p>
+<p><code>design-tokens.ts</code> 是 <code>@theme</code> 的 TypeScript 鏡像，同時給 <code>cn()</code> 和 Storybook 的 design token 頁面使用。為了避免兩邊不一致，再寫一支檢查腳本：CSS 和 TypeScript 的 token 定義不一致，或程式碼用到不存在的 token 時，腳本就 fail。</p>
+<h2 id="三、Headless-hooks：一套邏輯、多個畫面"><a href="#三、Headless-hooks：一套邏輯、多個畫面" class="headerlink" title="三、Headless hooks：一套邏輯、多個畫面"></a>三、Headless hooks：一套邏輯、多個畫面</h2><h3 id="情境"><a href="#情境" class="headerlink" title="情境"></a>情境</h3><p>職缺詳情有兩個畫面：</p>
+<ul>
+<li><strong>整頁</strong>：從外部連結或搜尋引擎進來的職缺詳情頁</li>
+<li><strong>側欄 panel</strong>：在職缺列表頁點選一個職缺時，右側展開的詳情</li>
+</ul>
+<p>兩個畫面的資料、收藏、申請流程、tracking 幾乎完全一樣，差別只在版面和少數行為。</p>
+<h3 id="做法：邏輯放在-hooks，元件只負責畫"><a href="#做法：邏輯放在-hooks，元件只負責畫" class="headerlink" title="做法：邏輯放在 hooks，元件只負責畫"></a>做法：邏輯放在 hooks，元件只負責畫</h3><pre><code class=" mermaid">flowchart TB
+    subgraph Hooks[&quot;Headless hooks：只有邏輯，沒有 UI&quot;]
+        H1[&quot;useJobDetail&lt;br/&gt;讀職缺、收藏、tracking&quot;]
+        H2[&quot;useApplyFlow&lt;br/&gt;申請表單展開、導頁&quot;]
+        H3[&quot;useDocumentGeneration&lt;br/&gt;AI 履歷與求職信生成&quot;]
+    end
+    VM[&quot;useJobDetailViewModel&lt;br/&gt;把 hooks 組成 view model&quot;]
+    H1 --&gt; VM
+    H2 --&gt; VM
+    H3 --&gt; VM
+    VM -- &quot;layout = page&quot; --&gt; P[&quot;職缺詳情整頁&quot;]
+    VM -- &quot;layout = panel&lt;br/&gt;emitViewEvent = false&quot; --&gt; S[&quot;職缺列表的側欄 panel&quot;]
+</code></pre>
+
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// hooks/job-detail/useJobDetailViewModel.ts</span><br><span class="hljs-keyword">import</span> &#123; useJobDetail &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./useJobDetail&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; useApplyFlow &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./useApplyFlow&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; useDocumentGeneration &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./useDocumentGeneration&#x27;</span>;<br><br><span class="hljs-keyword">type</span> <span class="hljs-title class_">Options</span> = &#123;<br>  <span class="hljs-attr">layout</span>: <span class="hljs-string">&#x27;page&#x27;</span> | <span class="hljs-string">&#x27;panel&#x27;</span>;<br>  <span class="hljs-attr">emitViewEvent</span>?: <span class="hljs-built_in">boolean</span>;   <span class="hljs-comment">// panel 不自己送瀏覽事件</span><br>&#125;;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">useJobDetailViewModel</span>(<span class="hljs-params"><span class="hljs-attr">jobId</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">options</span>: <span class="hljs-title class_">Options</span></span>) &#123;<br>  <span class="hljs-keyword">const</span> detail = <span class="hljs-title function_">useJobDetail</span>(jobId, &#123;<br>    <span class="hljs-attr">emitViewEvent</span>: options.<span class="hljs-property">emitViewEvent</span> ?? <span class="hljs-literal">true</span>,<br>  &#125;);<br>  <span class="hljs-keyword">const</span> apply = <span class="hljs-title function_">useApplyFlow</span>(detail.<span class="hljs-property">job</span>, &#123; <span class="hljs-attr">layout</span>: options.<span class="hljs-property">layout</span> &#125;);<br>  <span class="hljs-keyword">const</span> documents = <span class="hljs-title function_">useDocumentGeneration</span>(detail.<span class="hljs-property">job</span>);<br><br>  <span class="hljs-keyword">return</span> &#123;<br>    <span class="hljs-attr">job</span>: detail.<span class="hljs-property">job</span>,<br>    <span class="hljs-attr">isLoading</span>: detail.<span class="hljs-property">isLoading</span>,<br>    <span class="hljs-attr">error</span>: detail.<span class="hljs-property">error</span>,<br>    <span class="hljs-attr">isSaved</span>: detail.<span class="hljs-property">isSaved</span>,<br>    <span class="hljs-attr">toggleSave</span>: detail.<span class="hljs-property">toggleSave</span>,<br>    <span class="hljs-comment">// 「立即申請」或其他申請方式；職缺已關閉等沒有申請方式時是 null</span><br>    <span class="hljs-attr">primaryAction</span>: apply.<span class="hljs-property">primaryAction</span>,<br>    documents,<br>  &#125;;<br>&#125;<br><br><span class="hljs-comment">// view 只 import 這個型別，不需要依賴 hook 本身</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">type</span> <span class="hljs-title class_">JobDetailViewModel</span> = <span class="hljs-title class_">ReturnType</span>&lt;<span class="hljs-keyword">typeof</span> useJobDetailViewModel&gt;;<br></code></pre></td></tr></table></figure>
+
+<h3 id="實際怎麼用"><a href="#實際怎麼用" class="headerlink" title="實際怎麼用"></a>實際怎麼用</h3><p>畫面元件 <code>JobDetailView</code> 只接收這個 view model 負責畫，不直接碰 API 和 tracking：</p>
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// components/job-detail/JobDetailView.tsx</span><br><span class="hljs-comment">// 只會被下面兩個 client component 引入，所以自己不需要 &#x27;use client&#x27;</span><br><span class="hljs-keyword">import</span> <span class="hljs-keyword">type</span> &#123; <span class="hljs-title class_">JobDetailViewModel</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/hooks/job-detail/useJobDetailViewModel&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">JobDetailView</span>(<span class="hljs-params">&#123; vm &#125;: &#123; vm: JobDetailViewModel &#125;</span>) &#123;<br>  <span class="hljs-keyword">if</span> (vm.<span class="hljs-property">isLoading</span>) <span class="hljs-keyword">return</span> <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Loading…<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span></span>;<br>  <span class="hljs-keyword">if</span> (vm.<span class="hljs-property">error</span> || !vm.<span class="hljs-property">job</span>) <span class="hljs-keyword">return</span> <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>This job is no longer available.<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span></span>;<br><br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">article</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>&#123;vm.job.title&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">&#123;vm.toggleSave&#125;</span>&gt;</span>&#123;vm.isSaved ? &#x27;Saved&#x27; : &#x27;Save&#x27;&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></span><br><span class="language-xml">      &#123;vm.primaryAction &amp;&amp; (</span><br><span class="language-xml">        <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">&#123;vm.primaryAction.onClick&#125;</span>&gt;</span>&#123;vm.primaryAction.label&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></span><br><span class="language-xml">      )&#125;</span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>&#123;vm.job.description&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span></span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">article</span>&gt;</span></span><br>  );<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>整頁和側欄 panel 各自呼叫 view model、傳入自己的參數，再交給同一個 <code>JobDetailView</code> 去畫。兩者的差別只剩外層的容器和參數：</p>
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// components/job-detail/JobDetailPage.tsx</span><br><span class="hljs-comment">// 整頁：從外部連結或搜尋引擎進來</span><br><span class="hljs-string">&#x27;use client&#x27;</span>;<br><br><span class="hljs-keyword">import</span> &#123; useJobDetailViewModel &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/hooks/job-detail/useJobDetailViewModel&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">JobDetailView</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./JobDetailView&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">JobDetailPage</span>(<span class="hljs-params">&#123; jobId &#125;: &#123; jobId: <span class="hljs-built_in">string</span> &#125;</span>) &#123;<br>  <span class="hljs-keyword">const</span> vm = <span class="hljs-title function_">useJobDetailViewModel</span>(jobId, &#123; <span class="hljs-attr">layout</span>: <span class="hljs-string">&#x27;page&#x27;</span> &#125;);<br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">main</span> <span class="hljs-attr">className</span>=<span class="hljs-string">&quot;mx-auto max-w-3xl&quot;</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">JobDetailView</span> <span class="hljs-attr">vm</span>=<span class="hljs-string">&#123;vm&#125;</span> /&gt;</span></span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">main</span>&gt;</span></span><br>  );<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// components/job-detail/JobDetailPanel.tsx</span><br><span class="hljs-comment">// 側欄 panel：在職缺列表頁點選職缺時展開，瀏覽事件交給列表送（原因見下一節）</span><br><span class="hljs-string">&#x27;use client&#x27;</span>;<br><br><span class="hljs-keyword">import</span> &#123; useJobDetailViewModel &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/hooks/job-detail/useJobDetailViewModel&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">JobDetailView</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./JobDetailView&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">JobDetailPanel</span>(<span class="hljs-params">&#123; jobId &#125;: &#123; jobId: <span class="hljs-built_in">string</span> &#125;</span>) &#123;<br>  <span class="hljs-keyword">const</span> vm = <span class="hljs-title function_">useJobDetailViewModel</span>(jobId, &#123; <span class="hljs-attr">layout</span>: <span class="hljs-string">&#x27;panel&#x27;</span>, <span class="hljs-attr">emitViewEvent</span>: <span class="hljs-literal">false</span> &#125;);<br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">aside</span> <span class="hljs-attr">className</span>=<span class="hljs-string">&quot;sticky top-0 w-[420px]&quot;</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">JobDetailView</span> <span class="hljs-attr">vm</span>=<span class="hljs-string">&#123;vm&#125;</span> /&gt;</span></span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">aside</span>&gt;</span></span><br>  );<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>layout</code> 會傳進 <code>useApplyFlow</code>，讓 <code>primaryAction</code> 依畫面有不同的行為，例如在 panel 裡按下去不會離開列表頁。申請表單畫在哪裡、怎麼展開，屬於申請流程本身的細節，這裡省略。</p>
+<p>這樣分工之後，要改收藏或申請的邏輯，只要改 hooks，兩個畫面會一起更新；只是調整版面或樣式時，只要改 <code>JobDetailView</code> 或外層容器。如果版面的改動需要新的資料或動作，例如多顯示一個欄位、多一個按鈕，還是要先在 view model 補上，view 才拿得到。</p>
+<h3 id="差異靠參數，不靠複製"><a href="#差異靠參數，不靠複製" class="headerlink" title="差異靠參數，不靠複製"></a>差異靠參數，不靠複製</h3><p>最典型的差異是瀏覽事件。整頁打開時要送一次「職缺被瀏覽」的事件；但在列表頁的側欄 panel 裡，這個事件應該由列表那一側送出，因為列表才知道這個職缺在搜尋結果裡排第幾名。如果兩邊都送，數據就會重複。</p>
+<p>所以 panel 傳 <code>emitViewEvent: false</code>，由列表送出帶有搜尋排名的事件：</p>
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// components/job-list/JobList.tsx</span><br><span class="hljs-string">&#x27;use client&#x27;</span>;<br><br><span class="hljs-keyword">import</span> &#123; useState &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;react&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; track &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/lib/analytics&#x27;</span>;<br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">JobDetailPanel</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/components/job-detail/JobDetailPanel&#x27;</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">JobList</span>(<span class="hljs-params">&#123; jobs &#125;: &#123; jobs: &#123; id: <span class="hljs-built_in">string</span>; title: <span class="hljs-built_in">string</span> &#125;[] &#125;</span>) &#123;<br>  <span class="hljs-keyword">const</span> [selectedId, setSelectedId] = useState&lt;<span class="hljs-built_in">string</span> | <span class="hljs-literal">null</span>&gt;(<span class="hljs-literal">null</span>);<br><br>  <span class="hljs-comment">// 列表知道這個職缺排第幾名，由它送瀏覽事件</span><br>  <span class="hljs-keyword">const</span> <span class="hljs-title function_">select</span> = (<span class="hljs-params"><span class="hljs-attr">jobId</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">rank</span>: <span class="hljs-built_in">number</span></span>) =&gt; &#123;<br>    <span class="hljs-title function_">setSelectedId</span>(jobId);<br>    <span class="hljs-title function_">track</span>(<span class="hljs-string">&#x27;job_viewed&#x27;</span>, &#123; jobId, rank &#125;);<br>  &#125;;<br><br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">className</span>=<span class="hljs-string">&quot;flex&quot;</span>&gt;</span></span><br><span class="language-xml">      <span class="hljs-tag">&lt;<span class="hljs-name">ul</span>&gt;</span></span><br><span class="language-xml">        &#123;jobs.map((job, index) =&gt; (</span><br><span class="language-xml">          <span class="hljs-tag">&lt;<span class="hljs-name">li</span> <span class="hljs-attr">key</span>=<span class="hljs-string">&#123;job.id&#125;</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">&#123;()</span> =&gt;</span> select(job.id, index + 1)&#125;&gt;&#123;job.title&#125;<span class="hljs-tag">&lt;/<span class="hljs-name">li</span>&gt;</span></span><br><span class="language-xml">        ))&#125;</span><br><span class="language-xml">      <span class="hljs-tag">&lt;/<span class="hljs-name">ul</span>&gt;</span></span><br><span class="language-xml">      &#123;selectedId &amp;&amp; <span class="hljs-tag">&lt;<span class="hljs-name">JobDetailPanel</span> <span class="hljs-attr">jobId</span>=<span class="hljs-string">&#123;selectedId&#125;</span> /&gt;</span>&#125;</span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>  );<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>同一套邏輯，用參數處理差異</strong>，而不是複製一份 hooks 再改。</p>
+<h3 id="舊-hook-綁死舊-UI-時：寫一個新版對應物"><a href="#舊-hook-綁死舊-UI-時：寫一個新版對應物" class="headerlink" title="舊 hook 綁死舊 UI 時：寫一個新版對應物"></a>舊 hook 綁死舊 UI 時：寫一個新版對應物</h3><p>有些舊版 hook 綁死了舊版 UI（例如直接呼叫舊的 toast 或 modal）。這時不改舊版 hook，而是寫一個同樣介面的新版 hook：邏輯照搬，只換掉 toast、modal 這些「出口」；真正共用的部分（例如 API 呼叫）則抽到兩邊都能 import 的共用層。</p>
+<h2 id="四、怎麼量測一次前端重構的成效"><a href="#四、怎麼量測一次前端重構的成效" class="headerlink" title="四、怎麼量測一次前端重構的成效"></a>四、怎麼量測一次前端重構的成效</h2><h3 id="原則"><a href="#原則" class="headerlink" title="原則"></a>原則</h3><table>
+<thead>
+<tr>
+<th>原則</th>
+<th>為什麼</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>只比相對差，不看絕對值</td>
+<td>本地環境的絕對值不能代表 production，但同一台機器上新舊版本的差異是可信的</td>
+</tr>
+<tr>
+<td>用同一個 build 做 A&#x2F;B</td>
+<td>還保留舊版的頁面，用 query string 切換新舊版，排除 build 差異</td>
+</tr>
+<tr>
+<td>舊版已刪除的頁面，用改版前的 build 對照</td>
+<td>用 git worktree 另外 build 一份改版起點的程式碼</td>
+</tr>
+<tr>
+<td>每個 URL 跑多次取中位數</td>
+<td>桌機跑 5 次、模擬手機跑 3 次，避免單次的雜訊</td>
+</tr>
+<tr>
+<td>量的單位是「頁面」和「新版程式碼樹」，不是整個 repo</td>
+<td>舊版頁面還在 repo 裡時，整個 repo 的總數會稀釋改善的幅度</td>
+</tr>
+<tr>
+<td>改版期間的其他功能開發要分開歸因</td>
+<td>起點到終點之間不只有改版，整樹的數字要按目錄拆開</td>
+</tr>
+</tbody></table>
+<h3 id="量哪些指標、用什麼工具"><a href="#量哪些指標、用什麼工具" class="headerlink" title="量哪些指標、用什麼工具"></a>量哪些指標、用什麼工具</h3><table>
+<thead>
+<tr>
+<th>面向</th>
+<th>指標</th>
+<th>工具</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>靜態程式碼</td>
+<td><code>!important</code> 數量、自訂 CSS 行數、新版程式碼是否 import 舊 UI 框架</td>
+<td>shell script（grep）</td>
+</tr>
+<tr>
+<td>每頁下載量</td>
+<td>實際載入的 CSS &#x2F; JS bytes（gzip）、請求數</td>
+<td>啟動 production server，解析頁面引用的 asset</td>
+</tr>
+<tr>
+<td>CSS 結構</td>
+<td>rule 數、selector 複雜度、specificity、唯一字級與顏色數</td>
+<td><a target="_blank" rel="noopener" href="https://github.com/projectwallace/css-analyzer">@projectwallace&#x2F;css-analyzer</a></td>
+</tr>
+<tr>
+<td>載入速度</td>
+<td>FCP、LCP、<code>load</code>、TBT、CLS</td>
+<td>Playwright + Chrome DevTools Protocol</td>
+</tr>
+<tr>
+<td>執行期成本</td>
+<td>JS heap、DOM 節點數、style recalc 時間</td>
+<td>Chrome <code>Performance.getMetrics</code></td>
+</tr>
+<tr>
+<td>綜合分數</td>
+<td>Performance、Accessibility</td>
+<td>Lighthouse（mobile preset）</td>
+</tr>
+</tbody></table>
+<p>手機情境用 Chrome DevTools Protocol 模擬 slow 4G（150 ms RTT、1.6 Mbps）加上 4 倍 CPU 節流。</p>
+<h3 id="追根因：把-long-task-拆開"><a href="#追根因：把-long-task-拆開" class="headerlink" title="追根因：把 long task 拆開"></a>追根因：把 long task 拆開</h3><p>瀏覽器的 <code>longtask</code>（<code>PerformanceObserver</code>）只告訴你「有一個 50ms 以上的任務」，不告訴你任務裡在跑什麼。要知道是哪段 JavaScript 或哪次 layout 在吃時間，可以在 Playwright 裡用 CDP 的 <code>Tracing</code>：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs js"><span class="hljs-keyword">const</span> cdp = <span class="hljs-keyword">await</span> page.<span class="hljs-title function_">context</span>().<span class="hljs-title function_">newCDPSession</span>(page);<br><span class="hljs-keyword">const</span> events = [];<br>cdp.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;Tracing.dataCollected&#x27;</span>, <span class="hljs-function">(<span class="hljs-params">&#123; value &#125;</span>) =&gt;</span> events.<span class="hljs-title function_">push</span>(...value));<br><span class="hljs-keyword">const</span> done = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve</span>) =&gt;</span> cdp.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;Tracing.tracingComplete&#x27;</span>, resolve));<br><br><span class="hljs-keyword">await</span> cdp.<span class="hljs-title function_">send</span>(<span class="hljs-string">&#x27;Tracing.start&#x27;</span>, &#123;<br>  <span class="hljs-attr">categories</span>: [<br>    <span class="hljs-string">&#x27;devtools.timeline&#x27;</span>,<br>    <span class="hljs-string">&#x27;disabled-by-default-devtools.timeline&#x27;</span>,<br>    <span class="hljs-string">&#x27;disabled-by-default-devtools.timeline.stack&#x27;</span>,<br>    <span class="hljs-string">&#x27;v8.execute&#x27;</span>,<br>  ].<span class="hljs-title function_">join</span>(<span class="hljs-string">&#x27;,&#x27;</span>),<br>  <span class="hljs-attr">transferMode</span>: <span class="hljs-string">&#x27;ReportEvents&#x27;</span>,<br>&#125;);<br><span class="hljs-keyword">await</span> page.<span class="hljs-title function_">goto</span>(url);<br><span class="hljs-keyword">await</span> cdp.<span class="hljs-title function_">send</span>(<span class="hljs-string">&#x27;Tracing.end&#x27;</span>);<br><span class="hljs-keyword">await</span> done; <span class="hljs-comment">// 等所有事件收完</span><br></code></pre></td></tr></table></figure>
+
+<p>收集到事件後：</p>
+<ul>
+<li>取 <code>name === &#39;RunTask&#39;</code> 且 <code>dur &gt; 50000</code>（微秒）的事件當作 long task</li>
+<li>把時間區間落在 long task 裡的 <code>FunctionCall</code>、<code>EvaluateScript</code>、<code>Layout</code> 事件，依來源檔案加總，就知道是哪個 chunk 或哪次 layout 在吃時間</li>
+<li><code>Layout</code> 事件如果落在某個 <code>FunctionCall</code> 裡面，就是 forced synchronous layout，<code>stackTrace</code> 會告訴你是誰觸發的</li>
+</ul>
+<p>想驗證「是不是動畫造成的」，可以用 Playwright 的 <code>reducedMotion: &#39;reduce&#39;</code> 做對照，不需要改程式碼。</p>
+<h3 id="常見的陷阱"><a href="#常見的陷阱" class="headerlink" title="常見的陷阱"></a>常見的陷阱</h3><ul>
+<li><strong>standalone 模式不會 serve 靜態資源</strong>：Next.js 的 standalone <code>server.js</code> 不會 serve <code>.next/static</code>，CSS 和 JS 全部 404，但頁面本身回 200。量下載量之前，先確認任一個 asset 回 200，或改用 <code>next start</code></li>
+<li><strong>切換版本的 cookie 會殘留</strong>：用 query string 切換新舊版本時，如果會寫 cookie，同一個瀏覽器 context 連續量測就要記得清 cookie</li>
+<li><strong>grep <code>!</code> 會誤判</strong>：Tailwind v4 的 important modifier 是 <code>!</code> 開頭（例如 <code>!p-4</code>），直接 grep <code>!</code> 會把 JavaScript 的 <code>!isOpen</code> 也算進去，要限定 utility 名稱</li>
+<li><strong>LCP 元素可能不同、prefetch 的資源不在 bundle 裡</strong>：案例見第三篇</li>
+</ul>
+<h3 id="寫成可重現的文件"><a href="#寫成可重現的文件" class="headerlink" title="寫成可重現的文件"></a>寫成可重現的文件</h3><p>最後，把量測方法寫成一份文件：起點和終點的 commit、每個指標的指令、已知的陷阱。這樣之後把剩下的舊頁面全部移除時，可以用同一套方法再量一次，得到可以直接比較的第三個時間點。</p>
+<h2 id="系列結語"><a href="#系列結語" class="headerlink" title="系列結語"></a>系列結語</h2><p>這個系列從過程、取捨、挑戰、AI 協作一路寫到技術細節。如果只能留下一句話，我會選這句：<strong>大型前端重構的關鍵，不是一次寫出完美的新版，而是讓新舊版本能安全地並存、可以量測、可以隨時退回</strong>。有了這三件事，剩下的就是一頁一頁、按部就班地做完。</p>
+<hr>
+<p>系列第一篇：<a href="/2026/11/22/frontend-redesign-01-overview/" title="前端改版實戰（一）：19 個頁面、六週，從 Bootstrap 大雜燴到 Design System">前端改版實戰（一）：19 個頁面、六週，從 Bootstrap 大雜燴到 Design System</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+        <a href="/tags/Next-js/" class="print-no-link">#Next.js</a>
+      
+        <a href="/tags/%E5%89%8D%E7%AB%AF%E6%94%B9%E7%89%88%E5%AF%A6%E6%88%B0/" class="print-no-link">#前端改版實戰</a>
+      
+        <a href="/tags/Tailwind-CSS/" class="print-no-link">#Tailwind CSS</a>
+      
+        <a href="/tags/%E6%95%88%E8%83%BD%E9%87%8F%E6%B8%AC/" class="print-no-link">#效能量測</a>
+      
+        <a href="/tags/React-Hooks/" class="print-no-link">#React Hooks</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法</div>
+      <div>https://jh0712.github.io/2026/11/22/frontend-redesign-05-tech-notes/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年11月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/22/frontend-redesign-04-ai/" title="前端改版實戰（四）：我怎麼用 AI 加速一個 19 頁的前端改版">
+                        <span class="hidden-mobile">前端改版實戰（四）：我怎麼用 AI 加速一個 19 頁的前端改版</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>

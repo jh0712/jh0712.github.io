@@ -1,0 +1,1125 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="這是「前端改版實戰」系列的第二篇。上一篇講了 Remote Hunter 19 個頁面從舊設計搬到新 design system 的完整過程，這篇回頭看過程中做的九個取捨：每一個都有放棄的東西，有些到現在還在付代價。每個取捨都用「情境、選項、選擇、代價、回頭看」整理；第 7 和第 9 個沒有明確的替代方案，就只寫選擇和代價。 系列文章：（一）整個過程、（二）Trade-off、（三）挑戰與解法、">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端改版實戰（二）：Trade-off，這次改版我放棄了什麼">
+<meta property="og:url" content="https://jh0712.github.io/2026/11/22/frontend-redesign-02-trade-offs/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="這是「前端改版實戰」系列的第二篇。上一篇講了 Remote Hunter 19 個頁面從舊設計搬到新 design system 的完整過程，這篇回頭看過程中做的九個取捨：每一個都有放棄的東西，有些到現在還在付代價。每個取捨都用「情境、選項、選擇、代價、回頭看」整理；第 7 和第 9 個沒有明確的替代方案，就只寫選擇和代價。 系列文章：（一）整個過程、（二）Trade-off、（三）挑戰與解法、">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-11-22T02:10:00.000Z">
+<meta property="article:modified_time" content="2026-11-22T04:57:44.343Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="工程實踐">
+<meta property="article:tag" content="Next.js">
+<meta property="article:tag" content="Design System">
+<meta property="article:tag" content="前端改版實戰">
+<meta property="article:tag" content="前端重構">
+<meta property="article:tag" content="架構決策">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>前端改版實戰（二）：Trade-off，這次改版我放棄了什麼 - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="前端改版實戰（二）：Trade-off，這次改版我放棄了什麼"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-22 10:10" pubdate>
+          2026年11月22日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          55 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">前端改版實戰（二）：Trade-off，這次改版我放棄了什麼</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>這是「前端改版實戰」系列的第二篇。上一篇講了 Remote Hunter 19 個頁面從舊設計搬到新 design system 的完整過程，這篇回頭看過程中做的九個取捨：每一個都有放棄的東西，有些到現在還在付代價。每個取捨都用「情境、選項、選擇、代價、回頭看」整理；第 7 和第 9 個沒有明確的替代方案，就只寫選擇和代價。</p>
+<p>系列文章：<a href="/2026/11/22/frontend-redesign-01-overview/" title="前端改版實戰（一）：19 個頁面、六週，從 Bootstrap 大雜燴到 Design System">（一）整個過程</a>、（二）Trade-off、<a href="/2026/11/22/frontend-redesign-03-challenges/" title="前端改版實戰（三）：挑戰與解法，從 CSS 耦合到量測後才發現的效能陷阱">（三）挑戰與解法</a>、<a href="/2026/11/22/frontend-redesign-04-ai/" title="前端改版實戰（四）：我怎麼用 AI 加速一個 19 頁的前端改版">（四）用 AI 加速</a>、<a href="/2026/11/22/frontend-redesign-05-tech-notes/" title="前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法">（五）技術補充</a></p>
+</blockquote>
+<span id="more"></span>
+
+<p>九個取捨分成三類：架構、流程、程式碼組織。</p>
+<h2 id="架構上的取捨"><a href="#架構上的取捨" class="headerlink" title="架構上的取捨"></a>架構上的取捨</h2><h3 id="1-整頁重構，還是元件逐步替換"><a href="#1-整頁重構，還是元件逐步替換" class="headerlink" title="1. 整頁重構，還是元件逐步替換"></a>1. 整頁重構，還是元件逐步替換</h3><p><strong>情境</strong>：舊頁面混用 Bootstrap、Tailwind 和兩套 UI library，全域樣式會互相污染。</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 在舊頁面裡一個元件一個元件換成新設計</li>
+<li>B. 以頁面為單位，整頁重寫成新版</li>
+</ul>
+<p><strong>選擇</strong>：B。</p>
+<p>A 看起來風險比較小，每次只動一點點。但實際試過之後，新元件放進舊頁面就會被 Bootstrap 的全域 reset 和 SCSS 的全域 selector 影響，要長成設計稿的樣子，就得再寫一層 <code>!important</code> 蓋回去。這等於用新的技術債蓋舊的技術債。</p>
+<p><strong>代價</strong>：每一頁都是「全有或全無」。一頁沒做完就不能上線，單一 PR 也會比較大。核心頁面的重構期間，其他人在舊頁面上的修改還得再搬一次。</p>
+<p><strong>回頭看</strong>：在全域樣式污染這麼嚴重的專案裡，逐步替換只是看起來比較安全。</p>
+<h3 id="2-新舊頁面怎麼並存在同一個-URL-下"><a href="#2-新舊頁面怎麼並存在同一個-URL-下" class="headerlink" title="2. 新舊頁面怎麼並存在同一個 URL 下"></a>2. 新舊頁面怎麼並存在同一個 URL 下</h3><p><strong>情境</strong>：既然要整頁重寫，新舊版本就得共存一段時間。使用者看到的 URL 不能變（SEO、廣告連結、外部分享都依賴它），但新版和舊版要能各自上線、各自 rollback。</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 在同一個 <code>page.tsx</code> 裡依 feature flag 做 if&#x2F;else，分別 render 新舊元件</li>
+<li>B. 用 Next.js App Router 的 route group 分出兩棵樹</li>
+<li>C. 開一個真實的 <code>/v2</code> 路徑放新版頁面，由 middleware 依條件把 <code>/jobs</code> 內部改寫（rewrite）到 <code>/v2/jobs</code></li>
+</ul>
+<p><strong>選擇</strong>：C。</p>
+<p>A 的問題是 CSS：同一個 page 底下的 layout 會把 Bootstrap 和舊的 SCSS 一起載入，新版頁面還是會被污染。B 的問題是 App Router 不允許兩個 route group 對應到同一個 URL。C 讓新版頁面擁有自己的 root layout，從 <code>&lt;html&gt;</code> 開始就只載入新 design system 的 CSS。</p>
+<p><strong>代價</strong>：rewrite 會讓 server 端看到的 pathname（<code>/v2/jobs</code>）和瀏覽器看到的（<code>/jobs</code>）不一樣，造成 hydration mismatch 和 analytics 路徑錯誤。另外，有人直接打 <code>/v2/...</code> 的路徑時，也要導回乾淨的 URL，並且告訴搜尋引擎不要收錄。這兩個問題的解法在第五篇。</p>
+<p><strong>回頭看</strong>：rewrite 的副作用是可以一次性解決的；在 A 的做法下，CSS 污染是每一頁都要重新面對的。</p>
+<h3 id="3-新舊並存多久"><a href="#3-新舊並存多久" class="headerlink" title="3. 新舊並存多久"></a>3. 新舊並存多久</h3><p><strong>情境</strong>：新版上線後，舊版要留多久？</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 新版上線就刪舊版，乾淨俐落</li>
+<li>B. 舊版一直留著，當作長期的 rollback 方案</li>
+<li>C. 舊版保留一段時間，真實流量跑過、確認沒問題就刪</li>
+</ul>
+<p><strong>選擇</strong>：C，目標是一週內刪除。這幾個核心頁面修改頻率很高，舊版留越久，越容易有人誤改到舊檔案。</p>
+<p>實際上依頁面而不同：dashboard 在上線時就刪掉舊版，出事只能靠 git revert；職缺詳情大約兩週後刪除；職缺列表的舊版因為還有其他用途，到現在仍保留，隨時可以用 feature flag 切回去。</p>
+<p><strong>代價</strong>：保留期間，兩個版本都要維護。保留 rollback 路徑本身也有效能成本：量測時發現有一頁因為保留了舊版的 modal 當作 rollback，把整包舊 CSS 一起載回來，CSS 反而比舊版還大（第三篇）。</p>
+<p><strong>回頭看</strong>：會做一樣的選擇。真實流量跑過一輪、event 量比對完，就沒有理由再留。比較意外的是保留期間的效能成本，下次會把它算進「要留多久」的考量裡。</p>
+<h3 id="4-多個頁面共用的大功能：在核心頁面一起重寫，還是先從邊緣頁面開始"><a href="#4-多個頁面共用的大功能：在核心頁面一起重寫，還是先從邊緣頁面開始" class="headerlink" title="4. 多個頁面共用的大功能：在核心頁面一起重寫，還是先從邊緣頁面開始"></a>4. 多個頁面共用的大功能：在核心頁面一起重寫，還是先從邊緣頁面開始</h3><p><strong>情境</strong>：履歷編輯器和求職信編輯器是很大的功能：就地編輯、拖拉排序、新舊版本比對、下載、自動儲存，身上還掛著大量 tracking event。而且不只一個頁面在用：設定頁裡的「針對職缺優化過的履歷」列表會打開它們，核心的職缺詳情頁在申請流程裡也會打開它們。核心頁面的編輯器一壞，使用者就沒辦法順利申請職缺。</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 等到重構核心頁面時，連同編輯器一起重寫、一起上線</li>
+<li>B. 先在一個壞掉也不會影響核心流程的頁面上線新版編輯器，穩定後，核心頁面再用同一套新版編輯器、同樣的方式替換</li>
+</ul>
+<p><strong>選擇</strong>：B。</p>
+<pre><code class=" mermaid">flowchart TD
+    A[&quot;挑一個壞掉也不影響核心流程的頁面&lt;br/&gt;設定頁的優化履歷列表&quot;] --&gt; B[&quot;在這個頁面上線新版編輯器&lt;br/&gt;舊版保留，用 feature flag 切換&quot;]
+    B --&gt; C[&quot;真實流量跑一段時間&lt;br/&gt;修掉問題、確認 event 都正常&quot;]
+    C --&gt; D[&quot;核心的職缺詳情頁&lt;br/&gt;換上同一套新版編輯器&lt;br/&gt;同樣新舊並存、可以隨時切回舊版&quot;]
+    D --&gt; E[&quot;穩定後刪除舊版與 flag&quot;]
+</code></pre>
+
+<p>實際的順序是：設定頁先換上新版編輯器，大約三週後，核心的職缺詳情頁才換上同一套。這三週裡修掉的問題，例如分頁看起來同時被選取、錯誤訊息顯示在錯的位置、event 重複送出，都發生在不影響申請流程的地方。</p>
+<p>新版編輯器一開始也不是全部重寫：外殼、分頁和比對畫面是新設計，資料流、API、自動儲存和 tracking event 沿用舊版的做法；還沒重做的分頁，先把舊元件「寄宿」在新版的 modal 裡，幾天後才換成新版。</p>
+<p>這也是整個改版上線的共通模式：<strong>功能上線時，舊版和新版並存，用 feature flag 切換，出問題可以隨時切回舊版</strong>。例外是比較簡單、影響小、把握度高的功能，例如設定頁裡那幾個表單頁面，上線時就直接移除舊設計。</p>
+<p><strong>代價</strong>：</p>
+<ul>
+<li>並存期間，兩套編輯器都要維護，每個 tracking event 都要逐項對齊，並寫測試當作驗收依據</li>
+<li>為了 rollback 保留的舊版 modal 有效能成本：它把整包舊 CSS 一起帶進設定頁，就是第三篇「陷阱一」那個 CSS 反而變大的頁面</li>
+<li>過渡期的新版 modal 裡混著舊版的分頁，看得到新舊混合的痕跡</li>
+</ul>
+<p><strong>回頭看</strong>：會做一樣的選擇。核心頁面換上新版編輯器的時候，它已經在真實流量下跑過三週，最容易出錯的地方都先在邊緣頁面被抓出來了。如果選 A，這些問題會全部集中在核心頁面上線的那一天。</p>
+<h2 id="流程上的取捨"><a href="#流程上的取捨" class="headerlink" title="流程上的取捨"></a>流程上的取捨</h2><h3 id="5-追最新設計，還是凍結版本"><a href="#5-追最新設計，還是凍結版本" class="headerlink" title="5. 追最新設計，還是凍結版本"></a>5. 追最新設計，還是凍結版本</h3><p><strong>情境</strong>：改版進行到後期，需求方持續針對新設計提出新想法，設計師也持續更新設計稿。開發的速度追不上設計的速度。</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 一直追最新的設計稿</li>
+<li>B. 凍結某一個版本，先把這個版本做完上線，新的設計排到之後</li>
+</ul>
+<p><strong>選擇</strong>：B。凍結前，先把設計稿和現況的差異分成三類，再跟需求方對齊（分類方式見<a href="/2026/11/22/frontend-redesign-03-challenges/#%E8%A8%AD%E8%A8%88%E7%A8%BF%E8%BF%BD%E4%B8%8D%E4%B8%8A%EF%BC%9A%E5%87%8D%E7%B5%90%E7%89%88%E6%9C%AC">第三篇〈設計稿追不上：凍結版本〉</a>）。</p>
+<p><strong>代價</strong>：使用者短期內看不到最新的設計；需求方也要接受「這個想法要等下一版」。</p>
+<p><strong>回頭看</strong>：會做一樣的選擇，而且應該更早做。凍結之後，不用同時維護兩個設計版本，開發的節奏也終於穩定下來。</p>
+<h3 id="6-新需求加在舊頁面，還是新頁面"><a href="#6-新需求加在舊頁面，還是新頁面" class="headerlink" title="6. 新需求加在舊頁面，還是新頁面"></a>6. 新需求加在舊頁面，還是新頁面</h3><p><strong>情境</strong>：重構期間，產品還在迭代。新需求進來時，該加在現在線上的舊版，還是正在開發的新版？</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 全部加在新版，舊版凍結</li>
+<li>B. 全部加在舊版，新版完成後再搬</li>
+<li>C. 依頁面狀態決定</li>
+</ul>
+<p><strong>選擇</strong>：C。還沒開始重構的頁面，照常加在舊版；正在重構的核心頁，其他工程師繼續改舊版，最後短暫停工同步（流程見第三篇）。</p>
+<p><strong>代價</strong>：同一個需求可能要做兩次；停工期間其他人的開發會被卡住幾天。</p>
+<p><strong>回頭看</strong>：A 會讓重構變成其他人的阻礙；B 在核心頁面上會讓新版永遠追不上舊版。C 的成本是幾天的停工，換到的是重構不會被無限延長。</p>
+<h3 id="7-部分頁面保留舊版，不追求全部刪乾淨"><a href="#7-部分頁面保留舊版，不追求全部刪乾淨" class="headerlink" title="7. 部分頁面保留舊版，不追求全部刪乾淨"></a>7. 部分頁面保留舊版，不追求全部刪乾淨</h3><p><strong>情境</strong>：原本的目標是所有頁面都搬到新版，然後整包移除 Bootstrap 和舊的 UI library。</p>
+<p><strong>選擇</strong>：部分未登入頁面因為其他業務需求，刻意保留舊版；少數流程頁面也還沒搬。</p>
+<p><strong>代價</strong>：舊的 UI library 到現在一個都還沒能移除，repo 裡的舊 CSS 總量幾乎沒變。這次量到的改善，是「新版頁面實際載入的樣式」，不是「整個 repo 的程式碼量」。</p>
+<p><strong>回頭看</strong>：改版的目標是讓使用者看到的頁面變好、讓之後的開發變快，而不是 repo 裡的數字好看。剩下的頁面等有明確的商業理由時再搬。</p>
+<h2 id="程式碼組織上的取捨"><a href="#程式碼組織上的取捨" class="headerlink" title="程式碼組織上的取捨"></a>程式碼組織上的取捨</h2><h3 id="8-共用元件什麼時候抽"><a href="#8-共用元件什麼時候抽" class="headerlink" title="8. 共用元件什麼時候抽"></a>8. 共用元件什麼時候抽</h3><p><strong>情境</strong>：19 個頁面裡有很多看起來相似的區塊。要一開始就全部抽成共用元件，還是等需要時再抽？</p>
+<p><strong>選項</strong>：</p>
+<ul>
+<li>A. 一開始就抽：先盤點所有頁面，把相似的部分都做成共用元件</li>
+<li>B. 第二個使用者出現時才抽（promotion rule）：新元件先放在頁面旁邊，第二個頁面需要時，在同一個 PR 裡把它搬到共用目錄</li>
+</ul>
+<p><strong>選擇</strong>：階段 0 切元件時用 A，正式搬遷時用 B。</p>
+<p>階段 0 的目的是把設計稿切成一套 component library，所以讓 AI 先分析設計稿、盤點共用元件，再由我判斷哪些合理。正式搬遷時，真實資料和真實需求會讓很多「看起來一樣」的元件變得不一樣，這時就改用 B，並且定了三條規則：</p>
+<ul>
+<li>有業務語意的元件（例如職缺卡片）搬到對應的 domain 目錄</li>
+<li>沒有業務語意的元件（例如按鈕、modal）搬到 design system，並且補一個 Storybook story</li>
+<li>把一段 JSX 複製到第二個頁面，不被接受</li>
+</ul>
+<p>這三條在 10 月初寫進 <code>DESIGN.md</code>，以及 AI agent 每次開工都會讀的專案規則檔，人和 AI 照同一套規則抽元件（AI 怎麼守規則，見第四篇的「三層機制」）。</p>
+<p>整個新版程式碼的依賴方向只能由上往下：</p>
+<pre><code class=" mermaid">flowchart TD
+    P[&quot;Page&lt;br/&gt;頁面本身與只有它用到的元件&quot;] --&gt; S[&quot;Shell&lt;br/&gt;root layout、側欄、header&quot;]
+    P --&gt; C[&quot;Domain 元件與 headless hooks&lt;br/&gt;職缺卡片、申請表單、業務邏輯&quot;]
+    C --&gt; DS[&quot;Design system&lt;br/&gt;Button、Modal、Tabs 等無業務語意的元件&quot;]
+    S --&gt; DS
+    DS --&gt; T[&quot;Design tokens&lt;br/&gt;顏色、字級、圓角、尺寸、斷點&quot;]
+</code></pre>
+
+<h4 id="依賴方向正確，改一個元件不是也會影響好幾頁？"><a href="#依賴方向正確，改一個元件不是也會影響好幾頁？" class="headerlink" title="依賴方向正確，改一個元件不是也會影響好幾頁？"></a>依賴方向正確，改一個元件不是也會影響好幾頁？</h4><p>會，而且這是刻意的。把按鈕抽成共用元件，目的就是改一次、所有頁面一起變。</p>
+<p>依賴方向要保證的是另一件事：<strong>看檔案放在哪一層，就能判斷改它會影響誰</strong>。</p>
+<ul>
+<li>改頁面裡的檔案：只有這一頁會變</li>
+<li>改 domain 元件：用到這個元件的頁面會變</li>
+<li>改 design system：所有頁面都可能變</li>
+</ul>
+<p>方向反過來時，這個判斷就失準了。我後來抽查時發現一個「履歷拖放上傳區」元件放在設定頁的資料夾裡，看起來是設定頁私有的，但 Dashboard、職缺列表與職缺詳情頁的上傳 modal、自動申請的設定流程都在用它。用三個假設的修改來比較：</p>
+<table>
+<thead>
+<tr>
+<th>修改</th>
+<th>檔案放在</th>
+<th>從位置判斷會影響</th>
+<th>實際會影響</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>按鈕的圓角從 8px 改成 12px</td>
+<td>Design system</td>
+<td>所有頁面</td>
+<td>所有頁面，符合預期，可以在 Storybook 逐一檢查</td>
+</tr>
+<tr>
+<td>職缺卡片的薪資移到標題下方</td>
+<td>Domain 層</td>
+<td>有職缺卡片的頁面</td>
+<td>同左，符合預期</td>
+</tr>
+<tr>
+<td>設定頁希望上傳完成後直接跳到履歷列表，改的人把跳頁寫進這個元件</td>
+<td>設定頁的資料夾</td>
+<td>只有設定頁</td>
+<td>設定頁、Dashboard、職缺列表與職缺詳情頁的上傳 modal、自動申請設定流程</td>
+</tr>
+</tbody></table>
+<p>前兩個修改也會讓好幾頁一起變，但改的人事先就知道，會去檢查所有用到的地方。第三個需求只對設定頁合理，但改的人照位置判斷只測了設定頁，結果使用者在職缺頁面補一份履歷，上傳完就被帶離那個職缺。這些都在核心流程上。</p>
+<p>修法是照 promotion rule 把它搬到 domain 層。影響範圍沒有變小，改它一樣會影響這幾個地方；差別是改的人一看位置就知道它是共用的。</p>
+<p>依賴方向還有第二層意義：越底層的東西被越多地方依賴，越不該隨便改，也需要越多保護。Design system 的每個元件都有 story，domain 元件有測試，頁面則是需求最常落下來、改得最頻繁的地方。方向正確時，頁面怎麼改都不會往下傳；方向反過來，頁面為了自己的需求所做的每次修改，都可能傳到別的頁面去。</p>
+<p>位置判斷只是第一道防線。專案裡另外有一支影響範圍分析的腳本，從相依圖算出改一個檔案會影響哪些頁面，並提醒改了共用元件要回頭補 story。依賴方向讓人光看位置就能大致判斷，腳本負責給出精確的答案。</p>
+<p><strong>代價</strong>：B 需要紀律。規則是靠 code review、文件和 AI 的規則檔守住的，不是工具強制的；上面那個拖放上傳區，就是我後來抽查時才發現的。</p>
+<p><strong>回頭看</strong>：會做一樣的選擇，但會更早把依賴方向寫成 lint 規則，而不是只靠 review。</p>
+<p>這個拖放上傳區修正前後的依賴圖、違反方向的兩種情況，以及元件的依賴怎麼設計，我另外整理成一篇：<a href="/2026/11/22/frontend-dependency-direction/" title="前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方">前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方</a>。</p>
+<h3 id="9-不寫-barrel-index-ts"><a href="#9-不寫-barrel-index-ts" class="headerlink" title="9. 不寫 barrel index.ts"></a>9. 不寫 barrel <code>index.ts</code></h3><p><strong>情境</strong>：很多專案會在元件目錄放一個 <code>index.ts</code>，它不寫任何邏輯，只把同目錄的元件 re-export 出去，讓別的檔案從同一個入口 import。這種檔案叫 barrel file：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// design-system/index.ts（這就是 barrel）</span><br><span class="hljs-keyword">export</span> * <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./Button&#x27;</span><br><span class="hljs-keyword">export</span> * <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./Modal&#x27;</span><br><span class="hljs-keyword">export</span> * <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./Tag&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>選擇</strong>：共用元件一律 import 單一檔案，不寫 barrel。頁面私有的元件則用相對路徑 import。</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// 有 barrel：從目錄入口 import</span><br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">Button</span>, <span class="hljs-title class_">Modal</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/design-system&#x27;</span><br><br><span class="hljs-comment">// 不寫 barrel（我們的做法）：直接 import 單一檔案</span><br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">Button</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/design-system/Button&#x27;</span><br><span class="hljs-keyword">import</span> &#123; <span class="hljs-title class_">Modal</span> &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/design-system/Modal&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>代價</strong>：import 路徑比較長，一個檔案開頭可能有好幾行 import。</p>
+<p><strong>回頭看</strong>：好處比代價大很多：</p>
+<ul>
+<li><strong>一行 grep 就知道誰在用某個元件</strong>，刪除或修改前的影響範圍分析變得很簡單。例如要改 <code>Button</code>，<code>grep -r &quot;design-system/Button&quot;</code> 就能列出所有使用的地方；如果大家都寫 <code>from &#39;@/design-system&#39;</code>，路徑裡看不出是哪個元件，只能改搜 <code>Button</code>，結果會混進 <code>ButtonGroup</code>、其他套件的 <code>Button</code>，還得一個一個排除</li>
+<li><strong>看到相對路徑就知道這是頁面私有的</strong>，改它不會波及別的頁面</li>
+<li>對 AI agent 也比較友善：它不用追 barrel 的 re-export 鏈，就能找到元件的實際位置</li>
+</ul>
+<h2 id="總結"><a href="#總結" class="headerlink" title="總結"></a>總結</h2><table>
+<thead>
+<tr>
+<th>#</th>
+<th>取捨</th>
+<th>選擇</th>
+<th>主要代價</th>
+<th>重來一次</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>整頁重構 vs 逐步替換</td>
+<td>整頁重構</td>
+<td>單一 PR 大、修改要搬兩次</td>
+<td>一樣</td>
+</tr>
+<tr>
+<td>2</td>
+<td>新舊並存的方式</td>
+<td>middleware rewrite</td>
+<td>pathname 不一致的副作用</td>
+<td>一樣</td>
+</tr>
+<tr>
+<td>3</td>
+<td>新舊並存多久</td>
+<td>目標一週，依頁面調整</td>
+<td>保留期間的維護與效能成本</td>
+<td>一樣，但把效能成本算進去</td>
+</tr>
+<tr>
+<td>4</td>
+<td>多頁共用的大功能</td>
+<td>先從邊緣頁面上線，再換核心頁面</td>
+<td>兩套並存的維護與效能成本</td>
+<td>一樣</td>
+</tr>
+<tr>
+<td>5</td>
+<td>追設計 vs 凍結版本</td>
+<td>凍結</td>
+<td>新設計要等下一版</td>
+<td>一樣，而且更早做</td>
+</tr>
+<tr>
+<td>6</td>
+<td>新需求加在哪</td>
+<td>依頁面狀態決定</td>
+<td>部分需求做兩次、短暫停工</td>
+<td>一樣</td>
+</tr>
+<tr>
+<td>7</td>
+<td>是否全部刪乾淨</td>
+<td>保留部分舊頁面</td>
+<td>舊 UI library 還不能移除</td>
+<td>一樣</td>
+</tr>
+<tr>
+<td>8</td>
+<td>共用元件什麼時候抽</td>
+<td>第二個使用者出現才抽</td>
+<td>需要紀律，靠 review 守</td>
+<td>一樣，但更早寫成 lint</td>
+</tr>
+<tr>
+<td>9</td>
+<td>barrel <code>index.ts</code></td>
+<td>不寫</td>
+<td>import 路徑較長</td>
+<td>一樣</td>
+</tr>
+</tbody></table>
+<p>九個取捨的方向，回頭看幾乎都不會改；會改的是時間點。凍結版本、把舊版的成本算清楚、把規則寫成工具，這三件事如果早一點做，後面會少很多來回。</p>
+<hr>
+<p>下一篇：<a href="/2026/11/22/frontend-redesign-03-challenges/" title="前端改版實戰（三）：挑戰與解法，從 CSS 耦合到量測後才發現的效能陷阱">前端改版實戰（三）：挑戰與解法，從 CSS 耦合到量測後才發現的效能陷阱</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="category-chain-item">工程實踐</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+        <a href="/tags/Next-js/" class="print-no-link">#Next.js</a>
+      
+        <a href="/tags/Design-System/" class="print-no-link">#Design System</a>
+      
+        <a href="/tags/%E5%89%8D%E7%AB%AF%E6%94%B9%E7%89%88%E5%AF%A6%E6%88%B0/" class="print-no-link">#前端改版實戰</a>
+      
+        <a href="/tags/%E5%89%8D%E7%AB%AF%E9%87%8D%E6%A7%8B/" class="print-no-link">#前端重構</a>
+      
+        <a href="/tags/%E6%9E%B6%E6%A7%8B%E6%B1%BA%E7%AD%96/" class="print-no-link">#架構決策</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>前端改版實戰（二）：Trade-off，這次改版我放棄了什麼</div>
+      <div>https://jh0712.github.io/2026/11/22/frontend-redesign-02-trade-offs/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年11月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/22/frontend-dependency-direction/" title="前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/22/frontend-redesign-01-overview/" title="前端改版實戰（一）：19 個頁面、六週，從 Bootstrap 大雜燴到 Design System">
+                        <span class="hidden-mobile">前端改版實戰（一）：19 個頁面、六週，從 Bootstrap 大雜燴到 Design System</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>

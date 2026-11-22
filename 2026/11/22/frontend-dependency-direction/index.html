@@ -1,0 +1,1128 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-TW" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Kite">
+  <meta name="keywords" content="Laravel, PHP, API 設計, Elasticsearch, 後端開發, 工程實踐, Linux, Claude Code, 重構">
+  
+    <meta name="description" content="前端改版時，我花了不少時間在一個問題上：改一個元件，到底會影響幾頁？這篇整理我對「依賴方向」的理解：箭頭怎麼讀、為什麼只能往下、違反方向有哪兩種情況，以及元件的依賴要怎麼設計，才能讓改的人事先知道影響範圍。 這篇是從 前端改版實戰（二）：Trade-off 的「共用元件什麼時候抽」延伸出來的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方">
+<meta property="og:url" content="https://jh0712.github.io/2026/11/22/frontend-dependency-direction/index.html">
+<meta property="og:site_name" content="Kite Blog">
+<meta property="og:description" content="前端改版時，我花了不少時間在一個問題上：改一個元件，到底會影響幾頁？這篇整理我對「依賴方向」的理解：箭頭怎麼讀、為什麼只能往下、違反方向有哪兩種情況，以及元件的依賴要怎麼設計，才能讓改的人事先知道影響範圍。 這篇是從 前端改版實戰（二）：Trade-off 的「共用元件什麼時候抽」延伸出來的。">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2026-11-22T02:20:00.000Z">
+<meta property="article:modified_time" content="2026-11-22T04:57:44.343Z">
+<meta property="article:author" content="Kite">
+<meta property="article:tag" content="工程實踐">
+<meta property="article:tag" content="重構">
+<meta property="article:tag" content="前端架構">
+<meta property="article:tag" content="依賴方向">
+<meta property="article:tag" content="Design System">
+<meta property="article:tag" content="元件設計">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方 - Kite Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"jh0712.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KH</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首頁</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>歸檔</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分類</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>標籤</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/resume/" target="_self">
+                <i class="iconfont icon-briefcase"></i>
+                <span>經歷</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>關於</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首頁</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>歸檔</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分類</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>標籤</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/resume/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-briefcase"></i>
+                  <span>經歷</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>關於</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜尋</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="開燈"
+               data-label-dark="關燈">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">關燈</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-22 10:20" pubdate>
+          2026年11月22日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          95 分鐘
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>前端改版時，我花了不少時間在一個問題上：改一個元件，到底會影響幾頁？這篇整理我對「依賴方向」的理解：箭頭怎麼讀、為什麼只能往下、違反方向有哪兩種情況，以及元件的依賴要怎麼設計，才能讓改的人事先知道影響範圍。</p>
+<p>這篇是從 <a href="/2026/11/22/frontend-redesign-02-trade-offs/" title="前端改版實戰（二）：Trade-off，這次改版我放棄了什麼">前端改版實戰（二）：Trade-off</a> 的「共用元件什麼時候抽」延伸出來的。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="先學會讀箭頭：A-→-B-是「A-需要知道-B」"><a href="#先學會讀箭頭：A-→-B-是「A-需要知道-B」" class="headerlink" title="先學會讀箭頭：A → B 是「A 需要知道 B」"></a>先學會讀箭頭：A → B 是「A 需要知道 B」</h2><p>依賴圖上的一條箭頭 <code>A → B</code>，代表 A 的程式碼裡 import 了 B。我習慣把它讀成：<strong>A 需要知道 B</strong>。</p>
+<p>A 需要知道 B 放在哪裡、叫什麼名字、export 出來的東西長什麼樣子。所以：</p>
+<ul>
+<li>B 改了 export 的格式，A 可能要跟著改</li>
+<li>B 搬家或改名，A 會直接編譯失敗</li>
+<li>想刪掉 B，得先處理 A</li>
+</ul>
+<p>反過來，B 完全不需要知道 A 的存在，A 改什麼都不會影響到 B。</p>
+<p>這個不對稱就是依賴方向的意義：<strong>箭頭的起點承擔「對方改動」的風險；終點則背負「被依賴」的責任，指向它的箭頭越多，它越不該隨便改</strong>。</p>
+<h2 id="分層：跨層的箭頭只能往下"><a href="#分層：跨層的箭頭只能往下" class="headerlink" title="分層：跨層的箭頭只能往下"></a>分層：跨層的箭頭只能往下</h2><p>把前端的程式碼分成幾層：</p>
+<pre><code class=" mermaid">flowchart TD
+    P[&quot;Page&lt;br/&gt;頁面本身與只有它用到的元件&quot;] --&gt; D[&quot;Domain&lt;br/&gt;有業務語意的共用元件&lt;br/&gt;職缺卡片、上傳履歷 modal&quot;]
+    P --&gt; DS
+    D --&gt; DS[&quot;Design system&lt;br/&gt;沒有業務語意的元件&lt;br/&gt;Button、Modal、Tabs&quot;]
+    DS --&gt; T[&quot;Design tokens&lt;br/&gt;顏色、字級、圓角、尺寸、斷點&quot;]
+</code></pre>
+
+<p>第二篇的分層圖還有一層 Shell（root layout、側欄、header），它和 Domain 一樣夾在頁面和 Design system 之間。這篇的例子用不到，所以省略。以下把 Design tokens 簡稱為 Tokens。</p>
+<p>規則是：</p>
+<ul>
+<li><strong>跨層只能往下</strong>：上層可以 import 下層，下層永遠不 import 上層</li>
+<li><strong>同一層的共用元件可以互相 import，但不能形成循環</strong>：例如一個 Domain 元件用到另一個 Domain 元件</li>
+<li><strong>不同頁面的私有檔案不互相 import</strong>：另一個頁面也需要，就先搬到共用層</li>
+</ul>
+<p>為什麼是往下？因為越往下，被越多地方依賴：</p>
+<table>
+<thead>
+<tr>
+<th>層</th>
+<th>被誰依賴</th>
+<th>預期的修改頻率</th>
+<th>該有的保護</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Page</td>
+<td>沒有人</td>
+<td>最高，需求都落在這裡</td>
+<td>這一頁的測試</td>
+</tr>
+<tr>
+<td>Domain</td>
+<td>好幾個頁面</td>
+<td>中等</td>
+<td>單元測試、tracking event 檢查</td>
+</tr>
+<tr>
+<td>Design system</td>
+<td>所有頁面</td>
+<td>低</td>
+<td>每個元件都有 Storybook story</td>
+</tr>
+<tr>
+<td>Tokens</td>
+<td>所有元件</td>
+<td>最低</td>
+<td>token 一致性檢查</td>
+</tr>
+</tbody></table>
+<p>Robert C. Martin 把這叫做 Stable Dependencies Principle：<strong>依賴應該指向比自己更穩定的東西</strong>。</p>
+<p>這裡的「穩定」不是指改得少。Martin 的定義是：一個模組被很多模組依賴、自己又很少依賴別人，改它的阻力就很大，所以是穩定的。底層正是這樣：被所有頁面依賴，自己只依賴更底層的東西。這樣的模組如果反過來依賴一個常改的頁面，頁面的每次修改都會透過它傳到所有依賴它的地方。Martin 原本講的是套件之間的依賴，套用到資料夾分層一樣成立。</p>
+<p>下面的範例用這樣的目錄：<code>app/</code> 放路由，<code>features/&lt;頁面&gt;/</code> 放頁面私有的元件和設定，<code>components/</code> 放 Domain，<code>design-system/</code> 放 Design system，<code>design-system/tokens/</code> 放 Tokens。</p>
+<h2 id="例子一：Tokens-引用了頁面的設定"><a href="#例子一：Tokens-引用了頁面的設定" class="headerlink" title="例子一：Tokens 引用了頁面的設定"></a>例子一：Tokens 引用了頁面的設定</h2><p>最直接的反例是：你要改職缺詳情頁的版型，卻得連帶修改 Tokens，因為 Tokens 引用了這個頁面的設定。</p>
+<p>假設職缺詳情頁有一份專屬設定：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// features/job-detail/sidebar-config.ts</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> jobDetailSidebar = &#123;<br>  <span class="hljs-attr">width</span>: <span class="hljs-number">320</span>,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>然後共用的 Tokens 這樣寫：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// design-system/tokens/size.ts</span><br><span class="hljs-keyword">import</span> &#123; jobDetailSidebar &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/features/job-detail/sidebar-config&#x27;</span><br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> size = &#123;<br>  <span class="hljs-attr">sidebarWidth</span>: <span class="hljs-string">`<span class="hljs-subst">$&#123;jobDetailSidebar.width&#125;</span>px`</span>,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>這就是 <code>Tokens → Page</code>。用「誰需要知道誰」來讀：<code>size.ts</code> 需要知道職缺詳情頁的檔案位置和設定格式。</p>
+<pre><code class=" mermaid">flowchart LR
+    P[&quot;用到這些元件的頁面&quot;] --&gt; C[&quot;用到 size.ts 的&lt;br/&gt;共用元件&quot;]
+    C --&gt; T[&quot;Tokens&lt;br/&gt;size.ts&quot;]
+    T -.-&gt;|&quot;往上 import&quot;| L[&quot;職缺詳情頁&lt;br/&gt;sidebar-config.ts&quot;]
+</code></pre>
+
+<p>把圖從左讀到右，問題就很清楚了：用到 <code>size.ts</code> 的共用元件，以及用到這些元件的頁面，全都間接依賴了一個頁面的設定檔。Tokens 通常被大部分元件用到，所以這個範圍幾乎就是整個網站。</p>
+<p>實際會遇到的後果：</p>
+<ul>
+<li><strong>改名就壞</strong>：只是把 <code>features/job-detail/</code> 改名，連共用的 Tokens 都會編譯失敗</li>
+<li><strong>改版面會波及其他頁面</strong>：職缺詳情頁想把 <code>width</code> 改成別的格式，例如拆成手機和桌機兩個值，<code>size.ts</code> 也得跟著改，用到它的元件都可能受影響</li>
+<li><strong>刪不掉</strong>：之後職缺詳情頁改版、想整個資料夾重寫，得先回頭處理 Tokens</li>
+<li><strong>隨時可能出現循環依賴</strong>：哪天 <code>sidebar-config.ts</code> 想用一個 token，例如 <code>size.panelMd</code>，就變成 <code>size.ts → sidebar-config.ts → size.ts</code>。依載入順序，原生 ES module 會在初始化時丟出 <code>ReferenceError: Cannot access &#39;size&#39; before initialization</code>；轉成 CommonJS 的環境（例如部分測試設定）則是拿到 <code>undefined</code>。而且錯誤出現的位置，通常不是造成循環的那一行</li>
+</ul>
+<p>正常的方向反過來寫，讓頁面決定側欄要選哪個尺寸：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// design-system/tokens/size.ts</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> size = &#123;<br>  <span class="hljs-attr">panelMd</span>: <span class="hljs-string">&#x27;320px&#x27;</span>,<br>  <span class="hljs-attr">panelLg</span>: <span class="hljs-string">&#x27;400px&#x27;</span>,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// features/job-detail/sidebar-config.ts</span><br><span class="hljs-keyword">import</span> &#123; size &#125; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@/design-system/tokens/size&#x27;</span><br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> jobDetailSidebar = &#123;<br>  <span class="hljs-attr">width</span>: size.<span class="hljs-property">panelMd</span>,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<pre><code class=" mermaid">flowchart TD
+    L[&quot;職缺詳情頁&lt;br/&gt;sidebar-config.ts&quot;] --&gt; T[&quot;Tokens&lt;br/&gt;size.ts&quot;]
+    C[&quot;Button、Modal 等&lt;br/&gt;共用元件&quot;] --&gt; T
+</code></pre>
+
+<p>這樣職缺詳情頁想換寬一點的側欄，只要改成 <code>size.panelLg</code>，Tokens 完全不用動。如果 320px 只是這一頁的特殊需求，沒有其他地方會用到，也可以直接把數字留在頁面的 <code>sidebar-config.ts</code>，不必硬塞進 Tokens。</p>
+<h2 id="命名不等於依賴"><a href="#命名不等於依賴" class="headerlink" title="命名不等於依賴"></a>命名不等於依賴</h2><p>有個容易混淆的細節：如果 Token 取名叫 <code>jobDetailSidebarWidth</code>，它算不算依賴了職缺詳情頁？</p>
+<p>不算。這只代表<strong>命名綁定了頁面情境</strong>。判斷程式碼的依賴方向，要看兩件事：</p>
+<ul>
+<li><strong>值由誰提供</strong>：<code>320px</code> 是寫在 Tokens 裡，還是從頁面拿來的</li>
+<li><strong>誰引用誰</strong>：是頁面 import Tokens，還是 Tokens import 頁面</li>
+</ul>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-comment">// Dependency direction is fine: tokens provide the value, nothing is imported from the page</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> size = &#123;<br>  <span class="hljs-attr">jobDetailSidebarWidth</span>: <span class="hljs-string">&#x27;320px&#x27;</span>,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>這段的依賴方向是對的，頁面改名或刪除都不會讓它編譯失敗。</p>
+<p>不過這樣命名還是有代價，只是代價在設計上，不在依賴上：名字綁了頁面，大家就會把它當成那一頁的東西。職缺詳情頁要改寬度時，會直接改這個 token，卻沒發現另一個頁面的側欄也剛好用了它。用 <code>panelMd</code> 這種描述尺寸本身的名字，比較不會被當成某一頁私有的。</p>
+<h2 id="例子二：程式碼沒問題，只是放錯了位置"><a href="#例子二：程式碼沒問題，只是放錯了位置" class="headerlink" title="例子二：程式碼沒問題，只是放錯了位置"></a>例子二：程式碼沒問題，只是放錯了位置</h2><p>例子一是 Tokens 自己 import 了不該 import 的東西。還有另一種違反方向，程式碼本身完全沒問題，問題出在檔案放的位置。</p>
+<p>前端改版時，我抽查到一個「履歷拖放上傳區」元件，放在設定頁的資料夾裡。看位置，它是設定頁私有的；但實際上還有三個地方在用它：</p>
+<pre><code class=" mermaid">flowchart LR
+    P1[&quot;設定頁&lt;br/&gt;頁面層&quot;] --&gt;|&quot;同一頁，正常&quot;| X[&quot;履歷拖放上傳區&lt;br/&gt;放在設定頁的資料夾裡&lt;br/&gt;看起來是設定頁私有的&quot;]
+    P4[&quot;Dashboard&lt;br/&gt;頁面層&quot;] -.-&gt;|&quot;跨頁 import&quot;| X
+    D1[&quot;上傳履歷 modal&lt;br/&gt;Domain 層&lt;br/&gt;職缺列表、職缺詳情頁在用&quot;] -.-&gt;|&quot;往上 import&quot;| X
+    D3[&quot;自動申請的上傳履歷步驟&lt;br/&gt;Domain 層&quot;] -.-&gt;|&quot;往上 import&quot;| X
+</code></pre>
+
+<p>這個元件本身只 import 了 React、icon、檔案格式與大小上限的常數，以及 design system 的 Spinner，沒有 import 任何頁面的檔案。它的職責也切得很乾淨：只負責選檔，選好的檔案交給呼叫端，要不要上傳、上傳完做什麼，都由呼叫端決定。它自己沒有做錯任何事。</p>
+<p>問題是<strong>位置說的話和實際用途不一致</strong>。用三個假設的修改來比較：</p>
+<table>
+<thead>
+<tr>
+<th>修改</th>
+<th>檔案放在</th>
+<th>從位置判斷會影響</th>
+<th>實際會影響</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>按鈕圓角從 8px 改成 12px</td>
+<td>Design system</td>
+<td>所有頁面</td>
+<td>所有頁面，符合預期</td>
+</tr>
+<tr>
+<td>職缺卡片的薪資移到標題下方</td>
+<td>Domain</td>
+<td>有職缺卡片的頁面</td>
+<td>同左，符合預期</td>
+</tr>
+<tr>
+<td>設定頁希望上傳完成後直接跳到履歷列表，改的人把跳頁寫進這個元件</td>
+<td>設定頁的資料夾</td>
+<td>只有設定頁</td>
+<td>設定頁、Dashboard、職缺列表與職缺詳情頁的上傳 modal、自動申請設定流程</td>
+</tr>
+</tbody></table>
+<p>前兩個修改也會讓好幾頁一起變，但改的人事先就知道。第三個需求本身沒錯，在設定頁管理履歷，上傳完跳到列表很自然；但改的人看位置，以為這個元件是設定頁私有的，就把上傳和跳頁直接寫進元件裡，也只測了設定頁。結果使用者在職缺頁面打開上傳 modal 補一份履歷，上傳完就被帶離那個職缺；在自動申請設定流程上傳，也會被中途帶走。這個修改是假設的，但只要位置不改，遲早會有人照位置做判斷。</p>
+<p>修法是把檔案搬到 Domain 層，並更新所有 import 路徑：</p>
+<pre><code class=" mermaid">flowchart TD
+    P1[&quot;設定頁&lt;br/&gt;頁面層&quot;] --&gt; X[&quot;履歷拖放上傳區&lt;br/&gt;Domain 層&quot;]
+    P4[&quot;Dashboard&lt;br/&gt;頁面層&quot;] --&gt; X
+    P2[&quot;職缺列表、職缺詳情頁&lt;br/&gt;頁面層&quot;] --&gt; D1[&quot;上傳履歷 modal&lt;br/&gt;Domain 層&quot;]
+    D1 --&gt; X
+    D3[&quot;自動申請的上傳履歷步驟&lt;br/&gt;Domain 層&quot;] --&gt; X
+    X --&gt; B[&quot;Spinner 等&lt;br/&gt;Design system&quot;]
+</code></pre>
+
+<p>搬完之後，<strong>誰 import 誰完全沒變</strong>，改它一樣會影響同樣的地方。變的是分層的宣告：它現在放在 Domain 層，改的人一看位置就知道它是共用的。</p>
+<p>這也說明了依賴方向到底是什麼：<strong>它是把「實際的 import 關係」拿去對照「宣告的分層」得到的結果</strong>。同一條 import，兩端放在哪一層，決定了它是往下、同層，還是往上。在大部分前端專案裡，分層是用資料夾宣告的，所以人看路徑猜影響範圍，lint 規則也是比對路徑。資料夾放錯，人會猜錯；工具也只擋得住寫成規則的那幾條，例如 Domain 往頁面的資料夾拿元件，頁面之間互相拿就擋不住。</p>
+<h2 id="違反方向的兩種情況"><a href="#違反方向的兩種情況" class="headerlink" title="違反方向的兩種情況"></a>違反方向的兩種情況</h2><p>把兩個例子放在一起：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>依賴錯對象</th>
+<th>放錯位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>狀況</td>
+<td>元件本身 import 了比它高層的東西</td>
+<td>元件本身沒問題，只是放在不代表它真實用途的地方</td>
+</tr>
+<tr>
+<td>例子</td>
+<td>Tokens import 了職缺詳情頁的 <code>sidebar-config.ts</code></td>
+<td>好幾個地方在用的拖放上傳區，放在設定頁的資料夾</td>
+</tr>
+<tr>
+<td>怎麼看出來</td>
+<td>看這個檔案自己 import 了什麼</td>
+<td>看有誰 import 這個檔案</td>
+</tr>
+<tr>
+<td>修法</td>
+<td>改程式碼：把值或決定交給上層，例如讓頁面選 token、用 props 或 callback 傳進來</td>
+<td>確認它真的是共用的之後，搬到共用層並更新所有 import 路徑</td>
+</tr>
+<tr>
+<td>只搬資料夾有用嗎</td>
+<td>沒用。只換 <code>size.ts</code> 的路徑、不改它 import 的東西，它還是依賴頁面的設定</td>
+<td>有用</td>
+</tr>
+</tbody></table>
+<p>第一種比較危險，因為它真的把穩定的東西綁在常改的東西上。第二種的影響範圍本來就存在，只是被藏起來了。</p>
+<h2 id="怎麼設計比較好"><a href="#怎麼設計比較好" class="headerlink" title="怎麼設計比較好"></a>怎麼設計比較好</h2><h3 id="1-檔案位置就是宣告"><a href="#1-檔案位置就是宣告" class="headerlink" title="1. 檔案位置就是宣告"></a>1. 檔案位置就是宣告</h3><p>只有一頁用的元件放在頁面旁邊，用相對路徑 import。第二個頁面需要它時，在同一個 PR 裡把它搬到 Domain 或 Design system，不要從另一個頁面的資料夾裡拿。這樣「放在頁面旁邊」才真的代表「只有這一頁在用」。</p>
+<p>一個簡單的訊號：頁面私有的相對路徑應該只有 <code>./</code>。出現 <code>../另一個頁面/</code>，就是在跨頁拿東西；例子二的 Dashboard，就是用 <code>../</code> 跨到設定頁的資料夾拿元件。</p>
+<h3 id="2-共用的東西提供選項，使用者做決定"><a href="#2-共用的東西提供選項，使用者做決定" class="headerlink" title="2. 共用的東西提供選項，使用者做決定"></a>2. 共用的東西提供選項，使用者做決定</h3><p>例子一的修法是 Tokens 提供 <code>panelMd</code>、<code>panelLg</code>，由頁面選要用哪一個。元件也是一樣，例子二的拖放上傳區本身就是很好的示範：它只負責「選檔」，把選好的檔案交給呼叫端。要不要馬上上傳、上傳完要跳頁、要選定給某個職缺、還是進到下一步，都是使用它的地方才知道的事。</p>
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// The shared component only picks a file; the caller decides what happens next</span><br><span class="hljs-keyword">type</span> <span class="hljs-title class_">Props</span> = &#123;<br>  <span class="hljs-attr">onFileSelect</span>: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">file</span>: <span class="hljs-title class_">File</span></span>) =&gt;</span> <span class="hljs-built_in">void</span><br>  <span class="hljs-attr">busy</span>?: <span class="hljs-built_in">boolean</span><br>&#125;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">ResumeDropzone</span>(<span class="hljs-params">&#123; onFileSelect, busy &#125;: <span class="hljs-title class_">Props</span></span>) &#123;<br>  <span class="hljs-keyword">const</span> <span class="hljs-title function_">handleDrop</span> = (<span class="hljs-params"><span class="hljs-attr">e</span>: <span class="hljs-title class_">React</span>.<span class="hljs-title class_">DragEvent</span>&lt;<span class="hljs-title class_">HTMLDivElement</span>&gt;</span>) =&gt; &#123;<br>    e.<span class="hljs-title function_">preventDefault</span>()<br>    <span class="hljs-keyword">const</span> file = e.<span class="hljs-property">dataTransfer</span>.<span class="hljs-property">files</span>[<span class="hljs-number">0</span>]<br>    <span class="hljs-keyword">if</span> (file &amp;&amp; !busy) <span class="hljs-title function_">onFileSelect</span>(file)<br>  &#125;<br><br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">onDragOver</span>=<span class="hljs-string">&#123;(e)</span> =&gt;</span> e.preventDefault()&#125; onDrop=&#123;handleDrop&#125;&gt;</span><br><span class="language-xml">      &#123;busy ? &#x27;Uploading…&#x27; : &#x27;Drop your resume here&#x27;&#125;</span><br><span class="language-xml">    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>  )<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight tsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs tsx"><span class="hljs-comment">// Settings page: upload, then go to the resume list</span><br><span class="hljs-keyword">function</span> <span class="hljs-title function_">SettingsResumeUpload</span>(<span class="hljs-params"></span>) &#123;<br>  <span class="hljs-keyword">const</span> router = <span class="hljs-title function_">useRouter</span>()<br>  <span class="hljs-keyword">const</span> &#123; upload, uploading &#125; = <span class="hljs-title function_">useResumeUpload</span>()<br><br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">ResumeDropzone</span></span></span><br><span class="hljs-tag"><span class="language-xml">      <span class="hljs-attr">busy</span>=<span class="hljs-string">&#123;uploading&#125;</span></span></span><br><span class="hljs-tag"><span class="language-xml">      <span class="hljs-attr">onFileSelect</span>=<span class="hljs-string">&#123;async</span> (<span class="hljs-attr">file</span>) =&gt;</span> &#123;</span><br><span class="language-xml">        await upload(file)</span><br><span class="language-xml">        router.push(&#x27;/settings/resumes&#x27;)</span><br><span class="language-xml">      &#125;&#125;</span><br><span class="language-xml">    /&gt;</span><br>  )<br>&#125;<br><br><span class="hljs-comment">// Upload modal on a job: upload, attach the resume to this job, and stay here</span><br><span class="hljs-keyword">function</span> <span class="hljs-title function_">JobResumeUpload</span>(<span class="hljs-params">&#123; onSelect &#125;: &#123; onSelect: (resumeId: <span class="hljs-built_in">string</span>) =&gt; <span class="hljs-built_in">void</span> &#125;</span>) &#123;<br>  <span class="hljs-keyword">const</span> &#123; upload, uploading &#125; = <span class="hljs-title function_">useResumeUpload</span>()<br><br>  <span class="hljs-keyword">return</span> (<br>    <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">ResumeDropzone</span></span></span><br><span class="hljs-tag"><span class="language-xml">      <span class="hljs-attr">busy</span>=<span class="hljs-string">&#123;uploading&#125;</span></span></span><br><span class="hljs-tag"><span class="language-xml">      <span class="hljs-attr">onFileSelect</span>=<span class="hljs-string">&#123;async</span> (<span class="hljs-attr">file</span>) =&gt;</span> &#123;</span><br><span class="language-xml">        const resume = await upload(file)</span><br><span class="language-xml">        onSelect(resume.id)</span><br><span class="language-xml">      &#125;&#125;</span><br><span class="language-xml">    /&gt;</span><br>  )<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>useResumeUpload</code> 代表負責上傳的 hook，回傳上傳後的履歷。例子二那個「上傳完跳到列表」的需求，正確的做法就是這樣：讓設定頁在自己的 callback 裡處理，共用元件完全不用改。如果把上傳和 <code>router.push(&#39;/settings/resumes&#39;)</code> 直接寫進共用元件，就會從「放錯位置」變成「依賴錯對象」：共用元件開始需要知道設定頁的路由。</p>
+<p>Design system 要再嚴格一點：props 只描述外觀和行為，例如 <code>variant</code>、<code>size</code>、<code>disabled</code>，不收 <code>job</code>、<code>resume</code> 這種業務物件。</p>
+<h3 id="3-共用元件裡出現「是哪一頁」的判斷，就是抽錯了"><a href="#3-共用元件裡出現「是哪一頁」的判斷，就是抽錯了" class="headerlink" title="3. 共用元件裡出現「是哪一頁」的判斷，就是抽錯了"></a>3. 共用元件裡出現「是哪一頁」的判斷，就是抽錯了</h3><p>典型的徵兆是 <code>if (page === &#39;settings&#39;)</code>，或越來越多只有一個地方會傳的 boolean props，例如 <code>isSettingsPage</code>、<code>hideTitleOnDashboard</code>。這代表元件被迫知道上層的事，等於是一條不會出現在 import 裡的往上依賴：lint 和依賴圖都看不到它，只能靠 review 發現。</p>
+<p>修法是把差異往上推：用 callback、用 children 組合，或乾脆拆回各自的頁面。Sandi Metz 在〈The Wrong Abstraction〉裡有一句話很適合這個情況：<strong>重複的程式碼，比錯誤的抽象便宜得多</strong>。</p>
+<p>這和「第二個使用者出現就抽」並不衝突。兩邊做的是同一件事、業務意義相同，才抽成共用；只是長得像、業務意義不同，就留著重複，讓它們各自演進。</p>
+<h3 id="4-邏輯和畫面分開共用"><a href="#4-邏輯和畫面分開共用" class="headerlink" title="4. 邏輯和畫面分開共用"></a>4. 邏輯和畫面分開共用</h3><p>兩個頁面需要同一套資料和流程，但畫面不一樣時，把邏輯放進 headless hook（只有狀態和行為、不回傳任何畫面的 hook，<a href="/2026/11/22/frontend-redesign-05-tech-notes/" title="前端改版實戰（五）：技術補充，rewrite、design token、headless hooks 與量測方法">第五篇</a>有更多說明），畫面各自組合。共用邏輯不代表要共用畫面，這樣一個頁面改版面時，就不會動到另一個頁面。</p>
+<h3 id="5-不要有循環"><a href="#5-不要有循環" class="headerlink" title="5. 不要有循環"></a>5. 不要有循環</h3><p><code>A → B → A</code> 時，兩個檔案實際上綁成一個單位：很難單獨測試、單獨修改或刪除，初始化順序也變得脆弱。例子一就是循環的溫床：Tokens 一旦往上 import 了頁面的設定，那份設定（或它 import 的檔案）只要用到同一個 token 檔，就形成循環。Robert C. Martin 把這叫做 Acyclic Dependencies Principle；和 Stable Dependencies Principle 一樣，他原本講的是套件之間，套用到檔案之間也成立。</p>
+<h3 id="6-把規則寫成工具，不只靠-review"><a href="#6-把規則寫成工具，不只靠-review" class="headerlink" title="6. 把規則寫成工具，不只靠 review"></a>6. 把規則寫成工具，不只靠 review</h3><p>文件和 code review 會忘，lint 每次都會檢查。改版期間我們沒有這組設定，規則是靠 review 守的，例子二就是這樣漏掉的（見第二篇第 8 題的代價）。下面是回頭看會補上的設定，用 <code>eslint-plugin-import</code> 禁止特定目錄 import 另一個目錄，並抓出循環：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs js"><span class="hljs-comment">// eslint.config.mjs</span><br><span class="hljs-comment">// Needs: eslint-plugin-import, eslint-import-resolver-typescript, @typescript-eslint/parser</span><br><span class="hljs-keyword">import</span> importPlugin <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;eslint-plugin-import&#x27;</span><br><span class="hljs-keyword">import</span> tsParser <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@typescript-eslint/parser&#x27;</span><br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> [<br>  &#123;<br>    <span class="hljs-attr">files</span>: [<span class="hljs-string">&#x27;**/*.&#123;ts,tsx&#125;&#x27;</span>],<br>    <span class="hljs-attr">languageOptions</span>: &#123; <span class="hljs-attr">parser</span>: tsParser &#125;,<br>    <span class="hljs-attr">plugins</span>: &#123; <span class="hljs-attr">import</span>: importPlugin &#125;,<br>    <span class="hljs-attr">settings</span>: &#123;<br>      <span class="hljs-comment">// Resolve the @/ alias through tsconfig paths</span><br>      <span class="hljs-string">&#x27;import/resolver&#x27;</span>: &#123; <span class="hljs-attr">typescript</span>: <span class="hljs-literal">true</span> &#125;,<br>      <span class="hljs-comment">// Let import/no-cycle parse .ts and .tsx files</span><br>      <span class="hljs-string">&#x27;import/parsers&#x27;</span>: &#123; <span class="hljs-string">&#x27;@typescript-eslint/parser&#x27;</span>: [<span class="hljs-string">&#x27;.ts&#x27;</span>, <span class="hljs-string">&#x27;.tsx&#x27;</span>] &#125;,<br>    &#125;,<br>    <span class="hljs-attr">rules</span>: &#123;<br>      <span class="hljs-string">&#x27;import/no-restricted-paths&#x27;</span>: [<span class="hljs-string">&#x27;error&#x27;</span>, &#123;<br>        <span class="hljs-attr">zones</span>: [<br>          &#123; <span class="hljs-attr">target</span>: <span class="hljs-string">&#x27;./design-system/tokens&#x27;</span>, <span class="hljs-attr">from</span>: <span class="hljs-string">&#x27;./design-system&#x27;</span>, <span class="hljs-attr">except</span>: [<span class="hljs-string">&#x27;./tokens&#x27;</span>],<br>            <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Tokens must not depend on components&#x27;</span> &#125;,<br>          &#123; <span class="hljs-attr">target</span>: <span class="hljs-string">&#x27;./design-system&#x27;</span>, <span class="hljs-attr">from</span>: [<span class="hljs-string">&#x27;./components&#x27;</span>, <span class="hljs-string">&#x27;./features&#x27;</span>, <span class="hljs-string">&#x27;./app&#x27;</span>],<br>            <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Design system must not depend on domain components or pages&#x27;</span> &#125;,<br>          &#123; <span class="hljs-attr">target</span>: <span class="hljs-string">&#x27;./components&#x27;</span>, <span class="hljs-attr">from</span>: [<span class="hljs-string">&#x27;./features&#x27;</span>, <span class="hljs-string">&#x27;./app&#x27;</span>],<br>            <span class="hljs-attr">message</span>: <span class="hljs-string">&#x27;Move the file to a shared layer before importing it from a domain component&#x27;</span> &#125;,<br>        ],<br>      &#125;],<br>      <span class="hljs-string">&#x27;import/no-cycle&#x27;</span>: <span class="hljs-string">&#x27;error&#x27;</span>,<br>    &#125;,<br>  &#125;,<br>]<br></code></pre></td></tr></table></figure>
+
+<p>第一個 zone 擋下 Tokens 往上 import Design system 的元件；第二個擋下例子一；第三個擋下例子二裡兩個 domain 元件的 import；<code>no-cycle</code> 抓到 <code>size.ts</code> 和 <code>sidebar-config.ts</code> 互相 import。我用 ESLint 9 和 eslint-plugin-import 2.32 實跑過這組設定，改成正確的寫法之後就是 0 個錯誤。</p>
+<p>要注意的是，<code>settings</code> 裡的兩項少了任何一項都不會報錯，只會靜默失效：</p>
+<ul>
+<li>沒有 resolver：<code>@/</code> 開頭的 import 解析不到，規則直接略過，lint 照樣通過</li>
+<li>沒有 parsers：<code>no-cycle</code> 對 <code>.ts</code> 檔完全不報。<code>@typescript-eslint/parser</code> 也要裝在專案自己的 dependencies 裡，讓 plugin 找得到</li>
+</ul>
+<p>Next.js 專案如果已經用了 eslint-config-next，它已經註冊好 import plugin 和這兩項 settings，只要加上 <code>rules</code> 那段就好；其他專案要自己補齊。最保險的驗證方式是故意寫一條違規的 import，確認 lint 真的會失敗。</p>
+<p>lint 擋不住的有兩種：頁面之間互相 import（可以用 <code>except</code> 逐頁列舉，但頁面一多就難維護，改用 dependency-cruiser 這類工具比較好寫），以及第 3 點那種不會出現在 import 裡的往上依賴。</p>
+<p>另外兩件小事也有幫助：</p>
+<ul>
+<li><strong>不寫 barrel <code>index.ts</code></strong>：barrel 是只負責 re-export 同目錄元件的 <code>index.ts</code>，讓大家可以寫 <code>from &#39;@/design-system&#39;</code>。不寫它，import 路徑就會寫出元件的檔名，grep 能直接找到每個使用的地方（見第二篇第 9 題）</li>
+<li><strong>改共用元件前，先列出所有使用者</strong>：用 grep，或 madge、dependency-cruiser 這類能從依賴圖反查「誰依賴這個檔案」的工具，列出會跟著變的頁面</li>
+</ul>
+<h2 id="什麼時候該抽成共用"><a href="#什麼時候該抽成共用" class="headerlink" title="什麼時候該抽成共用"></a>什麼時候該抽成共用</h2><p>太早抽，容易抽錯，元件裡最後塞滿只為某一頁存在的 props；太晚抽，同一段 JSX 會被複製到好幾個地方，各自長歪。改版正式搬遷頁面時，我用的折衷是<strong>第二個使用者出現時才抽</strong>（設計稿剛切成元件時，則是先盤點再抽，見第二篇第 8 題）：</p>
+<ul>
+<li>第一次寫：放在頁面旁邊，不急著共用</li>
+<li>第二個頁面需要：在同一個 PR 裡搬到共用層，兩個使用處一起改成 import 新位置</li>
+<li>如果兩邊只是長得像，業務意義不同，就各留各的</li>
+</ul>
+<p>有些團隊用 rule of three（Don Roberts 提出、經 Martin Fowler 的《Refactoring》推廣），等第三個使用者出現才抽，換取對抽象更有把握。兩種都可以，重點是不要讓第二個使用者直接從第一個頁面的資料夾裡拿。</p>
+<h2 id="新增或修改元件前的檢查"><a href="#新增或修改元件前的檢查" class="headerlink" title="新增或修改元件前的檢查"></a>新增或修改元件前的檢查</h2><ul>
+<li><strong>現在有幾個地方用它</strong>？只有一個，放在頁面旁邊；兩個以上，放到共用層</li>
+<li><strong>它有業務語意嗎</strong>？有，放 Domain；沒有，放 Design system 並補一個 story</li>
+<li><strong>我要 import 的檔案在哪一層</strong>？在比我高的層，或在另一個頁面的資料夾裡，先把它搬到共用層，或改成由上層傳進來</li>
+<li><strong>這次修改是所有使用者都要，還是只有這一頁要</strong>？只有這一頁要，用 props、callback 或選另一個 token，不改共用的預設值</li>
+<li><strong>改共用的東西之前，知道所有使用的地方嗎</strong>？用 grep 或依賴圖工具，列出會跟著變的頁面，逐一檢查</li>
+</ul>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>改一個共用元件會影響好幾頁，這本身不是問題，那正是抽出共用元件的目的。真正的問題是改的人事先不知道。</p>
+<p>依賴方向要做的，就是讓「檔案放在哪裡」可以被信任：放在頁面旁邊的只影響這一頁，放在 Domain 的影響用到它的頁面，放在 Design system 和 Tokens 的影響全部。只要箭頭都往下，看一眼路徑就能知道影響範圍大概落在哪裡，精確的範圍再交給依賴圖去算；工具再把箭頭的方向守住，這個判斷就不會在某一天悄悄失準。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/" class="category-chain-item">技術文章</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%8A%80%E8%A1%93%E6%96%87%E7%AB%A0/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%A7%8B/" class="category-chain-item">前端架構</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AF%A6%E8%B8%90/" class="print-no-link">#工程實踐</a>
+      
+        <a href="/tags/%E9%87%8D%E6%A7%8B/" class="print-no-link">#重構</a>
+      
+        <a href="/tags/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%A7%8B/" class="print-no-link">#前端架構</a>
+      
+        <a href="/tags/%E4%BE%9D%E8%B3%B4%E6%96%B9%E5%90%91/" class="print-no-link">#依賴方向</a>
+      
+        <a href="/tags/Design-System/" class="print-no-link">#Design System</a>
+      
+        <a href="/tags/%E5%85%83%E4%BB%B6%E8%A8%AD%E8%A8%88/" class="print-no-link">#元件設計</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>前端元件的依賴方向：改一個檔案，為什麼會影響到不相干的地方</div>
+      <div>https://jh0712.github.io/2026/11/22/frontend-dependency-direction/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Kite</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>發布於</div>
+          <div>2026年11月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>許可協議</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 姓名標示">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/22/frontend-redesign-03-challenges/" title="前端改版實戰（三）：挑戰與解法，從 CSS 耦合到量測後才發現的效能陷阱">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">前端改版實戰（三）：挑戰與解法，從 CSS 耦合到量測後才發現的效能陷阱</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/22/frontend-redesign-02-trade-offs/" title="前端改版實戰（二）：Trade-off，這次改版我放棄了什麼">
+                        <span class="hidden-mobile">前端改版實戰（二）：Trade-off，這次改版我放棄了什麼</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目錄</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜尋</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">關鍵字</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="/js/posthog.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">部落格在允許 JavaScript 執行的環境下瀏覽效果更佳</div>
+  </noscript>
+</body>
+</html>
